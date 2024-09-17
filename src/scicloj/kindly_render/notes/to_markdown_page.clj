@@ -1,10 +1,10 @@
-(ns scicloj.kindly-render.notes.markdown
+(ns scicloj.kindly-render.notes.to-markdown-page
   (:require [clojure.data.json :as json]
             [clojure.string :as str]
             [hiccup.core :as hiccup]
             [hiccup.page :as page]
-            [scicloj.kindly-render.value.to-hiccup-js :as to-hiccup-js]
-            [scicloj.kindly-render.value.to-markdown :as to-markdown]))
+            [scicloj.kindly-render.note.to-hiccup-js :as to-hiccup-js]
+            [scicloj.kindly-render.note.to-markdown :as to-markdown]))
 
 ;; Markdown is sensitive to whitespace (especially newlines).
 ;; fragments like blocks must be separated by a blank line.

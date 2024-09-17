@@ -1,10 +1,10 @@
-(ns scicloj.kindly-render.value.to-hiccup-js
+(ns scicloj.kindly-render.note.to-hiccup-js
   (:require #?(:clj [clojure.data.json :as json])
             [clojure.pprint :as pprint]
             [clojure.string :as str]
-            [scicloj.kind-portal.v1.impl :as kpi]
+            [scicloj.kind-portal.v1.api :as kpi]
             [scicloj.kindly-render.util :as util]
-            [scicloj.kindly-render.value.to-hiccup :as to-hiccup])
+            [scicloj.kindly-render.note.to-hiccup :as to-hiccup])
   (:import (clojure.lang IDeref)))
 
 (defmulti hiccup-js :kind)
@@ -17,16 +17,26 @@
 (defn deps [& ks]
   (swap! *deps* into ks))
 
+;; TODO: Should be configurable
+;; TODO: maybe a way to use npm?
 (def dep-includes
-  {:portal  ["portal-main.js"]
-   :scittle ["https://scicloj.github.io/scittle/js/scittle.js"]
-   :reagent ["https://unpkg.com/react@18/umd/react.production.min.js"
-             "https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"
-             "https://scicloj.github.io/scittle/js/scittle.js"
-             "https://scicloj.github.io/scittle/js/scittle.reagent.js"]
-   :vega    ["https://cdn.jsdelivr.net/npm/vega@5"
-             "https://cdn.jsdelivr.net/npm/vega-lite@5"
-             "https://cdn.jsdelivr.net/npm/vega-embed@6"]})
+  {:portal          ["portal-main.js"]
+   :scittle         ["https://scicloj.github.io/scittle/js/scittle.js"]
+   :scittle-reagent ["https://scicloj.github.io/scittle/js/scittle.reagent.js"]
+   :reagent         ["https://unpkg.com/react@18/umd/react.production.min.js"
+                     "https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"
+                     "https://scicloj.github.io/scittle/js/scittle.js"]
+   :vega            ["https://cdn.jsdelivr.net/npm/vega@5"
+                     "https://cdn.jsdelivr.net/npm/vega-lite@5"
+                     "https://cdn.jsdelivr.net/npm/vega-embed@6"]
+   :datatables      ["js"
+                     "css"]
+   :echarts ["https://cdn.jsdelivr.net/npm/echarts@5.4.1/dist/echarts.min.js"]})
+
+(def transitive-deps
+  {:datatables      #{:jquery}
+   :reagent         #{:scittle-reagent}
+   :scittle-reagent #{:scittle}})
 
 (defn include-js []
   (distinct (mapcat dep-includes @*deps*)))
@@ -37,9 +47,19 @@
   (deps :vega)
   [:div {:style {:width "100%"}}
    [:script (str "vegaEmbed(document.currentScript.parentElement, "
-                 #?(:clj (json/write-str value)
+                 #?(:clj  (json/write-str value)
                     :cljs (clj->js value))
                  ");")]])
+
+;; TODO: switch to returning maps
+#_(defn vega [value]
+  {:deps   #{:vega}
+   :hiccup [:div {:style {:width "100%"}}
+            [:script (str "vegaEmbed(document.currentScript.parentElement, "
+                          #?(:clj  (json/write-str value)
+                             :cljs (clj->js value))
+                          ");")]]})
+
 
 (defmethod hiccup-js :kind/vega [{:keys [value]}]
   (vega value))
@@ -59,6 +79,11 @@
 (defn no-spaces [s]
   (str/replace s #"\s" "-"))
 
+(def ^:dynamic *scope-name*)
+
+(def ^:dynamic *counter*)
+
+;; TODO: scopes!
 (defn gen-id []
   (str (no-spaces *scope-name*) "-" (swap! *counter* inc)))
 
@@ -97,3 +122,20 @@
 
 (defmethod hiccup-js :kind/hiccup [{:keys [value]}]
   (util/expand-hiccup value hiccup-js))
+
+;; TODO: standardize json writing
+(defmethod hiccup-js :kind/echarts [{:keys [value]}]
+  (deps :echarts)
+  [:div {:style "height:500px"
+         ;; TODO: hiccup doesn't do styles (nested maps) properly
+         #_{:height "500px"}}
+   ;;{:style (extract-style context)}
+   [:script
+    (->> #?(:clj  (json/write-str value)
+            :cljs (clj->js value))
+         (format
+           "
+{
+var myChart = echarts.init(document.currentScript.parentElement);
+myChart.setOption(%s);
+};"))]])

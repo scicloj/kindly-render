@@ -1,4 +1,4 @@
-(ns scicloj.kindly-render.value.to-hiccup
+(ns scicloj.kindly-render.note.to-hiccup
   (:require [clojure.pprint :as pprint]
             [scicloj.kindly-render.util :as util]
             [scicloj.kindly-render.from-markdown :as from-markdown])

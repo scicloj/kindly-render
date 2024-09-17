@@ -1,6 +1,7 @@
 (ns scicloj.kindly-render.util
   (:require [scicloj.kindly-advice.v1.api :as ka]
-            [scicloj.kindly-advice.v1.completion :as kc]))
+            [scicloj.kindly-advice.v1.completion :as kc])
+  (:import (clojure.lang IDeref)))
 
 ;; TODO: this doesn't seem like the right place for this, maybe move to kindly-advice?
 
@@ -33,7 +34,7 @@
   (if-let [note (kind-request hiccup)]
     (expander note)
     (cond (instance? IDeref hiccup)
-          (recur @hiccup)
+          (recur @hiccup expander)
 
           (vector? hiccup)
           (let [[tag & children] hiccup

@@ -1,10 +1,10 @@
-(ns scicloj.kindly-render.value.to-markdown
+(ns scicloj.kindly-render.note.to-markdown
   (:require [clojure.pprint :as pprint]
             [clojure.string :as str]
             [hiccup.core :as hiccup]
             [scicloj.kindly-render.util :as util]
-            [scicloj.kindly-render.value.to-hiccup-js :as to-hiccup-js]
-            [scicloj.kindly-render.value.to-hiccup :as to-hiccup]))
+            [scicloj.kindly-render.note.to-hiccup-js :as to-hiccup-js]
+            [scicloj.kindly-render.note.to-hiccup :as to-hiccup]))
 
 (defmulti markdown :kind)
 

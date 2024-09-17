@@ -1,6 +1,6 @@
-(ns scicloj.kindly-render.notes.html
+(ns scicloj.kindly-render.notes.to-html-page
   (:require [hiccup.page :as page]
-            [scicloj.kindly-render.value.to-hiccup-js :as to-hiccup-js]))
+            [scicloj.kindly-render.note.to-hiccup-js :as to-hiccup-js]))
 
 (defn expr-result [{:keys [code] :as note}]
   ;; TODO: handle errors (in adapter???)
