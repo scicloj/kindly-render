@@ -1,5 +1,6 @@
 {:paths   ["src" "resources"]
  :deps    {org.clojure/clojure            {:mvn/version "1.11.1"}
+           ;; TODO: probably we should either replace or leave it up to the user
            hiccup/hiccup                  {:mvn/version "1.0.5"}
            io.github.nextjournal/markdown {:mvn/version "0.5.148"}
            org.scicloj/kindly-advice      {:mvn/version "1-beta1"}

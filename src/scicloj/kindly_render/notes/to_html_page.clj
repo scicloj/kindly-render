@@ -1,6 +1,7 @@
 (ns scicloj.kindly-render.notes.to-html-page
   (:require [hiccup.page :as page]
-            [scicloj.kindly-render.note.to-hiccup-js :as to-hiccup-js]))
+            [scicloj.kindly-render.note.to-hiccup-js :as to-hiccup-js]
+            [scicloj.kindly-render.util :as util]))
 
 (defn expr-result [{:keys [code] :as note}]
   ;; TODO: handle errors (in adapter???)
@@ -8,7 +9,7 @@
    ;; code
    [:pre [:code code]]
    ;; value
-   (to-hiccup-js/hiccup-js note)])
+   (to-hiccup-js/render (util/derefing-advise note))])
 
 (defn page [elements]
   (page/html5

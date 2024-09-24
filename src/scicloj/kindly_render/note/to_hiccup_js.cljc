@@ -7,10 +7,13 @@
             [scicloj.kindly-render.note.to-hiccup :as to-hiccup])
   (:import (clojure.lang IDeref)))
 
-(defmulti hiccup-js :kind)
+(defmulti render* :kind)
 
-(defmethod hiccup-js :default [note]
-  (to-hiccup/hiccup note))
+(defn render [note]
+  (render* (util/derefing-advise note)))
+
+(defmethod render* :default [note]
+  (to-hiccup/render note))
 
 (def ^:dynamic *deps* (atom #{}))
 
@@ -41,7 +44,7 @@
 (defn include-js []
   (distinct (mapcat dep-includes @*deps*)))
 
-(defmethod hiccup-js :kind/hidden [note])
+(defmethod render* :kind/hidden [note])
 
 (defn vega [value]
   (deps :vega)
@@ -61,10 +64,10 @@
                           ");")]]})
 
 
-(defmethod hiccup-js :kind/vega [{:keys [value]}]
+(defmethod render* :kind/vega [{:keys [value]}]
   (vega value))
 
-(defmethod hiccup-js :kind/vega-lite [{:keys [value]}]
+(defmethod render* :kind/vega-lite [{:keys [value]}]
   (vega value))
 
 (defn format-code [form]
@@ -94,7 +97,7 @@
      (-> [(list 'dom/render v (list 'js/document.getElementById id))]
          (scittle))]))
 
-(defmethod hiccup-js :kind/reagent [{:keys [value]}]
+(defmethod render* :kind/reagent [{:keys [value]}]
   (if (vector? value)
     (reagent value)
     (reagent [value])))
@@ -111,7 +114,7 @@
    \"text\": (() => " (pr-str value-str) ")},
   document.currentScript.parentElement);")]]))
 
-(defmethod hiccup-js :kind/portal [{:keys [value]}]
+(defmethod render* :kind/portal [{:keys [value]}]
   ;; TODO: it isn't clear that value must be a vector wrapper, but it probably is???
   ;; Wouldn't it be nicer if :tool/portal was orthogonal to :kind/vega etc...
   ;; what about :kind/chart, :grammar/vega, :tool/portal ... too much?
@@ -120,11 +123,27 @@
   ;; TODO: kind/portal is replacing kind/hiccup
   (portal {:value (first value)}))
 
-(defmethod hiccup-js :kind/hiccup [{:keys [value]}]
-  (util/expand-hiccup value hiccup-js))
+;; Data types that can be recursive
+
+(defmethod render* :kind/vector [{:keys [value]}]
+  (util/expand-data {:class "kind_vector"} value render))
+
+(defmethod render* :kind/map [{:keys [value]}]
+  (util/expand-data {:class "kind_map"} (apply concat value) render))
+
+(defmethod render* :kind/set [{:keys [value]}]
+  (util/expand-data {:class "kind_set"} value render))
+
+(defmethod render* :kind/seq [{:keys [value]}]
+  (util/expand-data {:class "kind_seq"} value render))
+
+;; Special data type hiccup that needs careful expansion
+
+(defmethod render* :kind/hiccup [{:keys [value]}]
+  (util/expand-hiccup value render))
 
 ;; TODO: standardize json writing
-(defmethod hiccup-js :kind/echarts [{:keys [value]}]
+(defmethod render* :kind/echarts [{:keys [value]}]
   (deps :echarts)
   [:div {:style "height:500px"
          ;; TODO: hiccup doesn't do styles (nested maps) properly

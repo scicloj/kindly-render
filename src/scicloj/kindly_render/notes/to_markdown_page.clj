@@ -4,7 +4,8 @@
             [hiccup.core :as hiccup]
             [hiccup.page :as page]
             [scicloj.kindly-render.note.to-hiccup-js :as to-hiccup-js]
-            [scicloj.kindly-render.note.to-markdown :as to-markdown]))
+            [scicloj.kindly-render.note.to-markdown :as to-markdown]
+            [scicloj.kindly-render.util :as util]))
 
 ;; Markdown is sensitive to whitespace (especially newlines).
 ;; fragments like blocks must be separated by a blank line.
@@ -25,7 +26,7 @@
               code (str (to-markdown/block code "clojure"))
               out (join (to-markdown/message out "stdout"))
               err (join (to-markdown/message err "stderr"))
-              (contains? note :value) (join (to-markdown/markdown note))
+              (contains? note :value) (join (to-markdown/render (util/derefing-advise note)))
               exception (join (to-markdown/message (ex-message exception) "exception"))))))
 
 ;; TODO: DRY and move to a css file
