@@ -20,7 +20,99 @@ The hope is to make it convenient to share visualizations between tools.
 
 ## Rationale
 
-Visual tool makers may benefit from having a shared collection of viewers for kinds.
+Visual toolmakers may benefit from having a shared collection of viewers for the kinds defined by Kindly.
+Rendering visualizations should be possible in both Clojure and ClojureScript.
+Viewers may need to be tailored to different usage scenarios.
+
+## What are notes?
+
+The purpose of this library is to take a `note` or `notebook` consisting of `notes`,
+and produce markdown, hiccup, or html for displaying them.
+A note is a map containing either a value, form, or both.
+
+Example note:
+
+```clojure
+{:form (+ 1 2)
+ :value 3}
+```
+
+Example notebook:
+
+```clojure
+{:notes [{:value 3} {:value "Hello world"}]}
+```
+
+A note may be annotated for visualization with kindly:
+
+```clojure
+{:value (kind/hiccup [:svg [:circle {:r 10}]])}
+```
+
+## Usage
+
+No releases are available yet, please use a git dependency if you want to try it.
+
+```clojure
+(require '[scicloj.kindly-render.note.to-hiccup :as to-hiccup])
+(to-hiccup/render my-note)
+```
+
+Returns a hiccup representation of the visualization of `my-note`.
+
+```clojure
+(require '[scicloj.kindly-render.notes.to-html-page :as to-html-page])
+(to-html-page/notes-to-html my-notebook)
+```
+
+Returns a string of HTML representation of the `my-notebook`.
+
+See [examples/basic/page.clj](examples/basic/page.clj) for a concrete example.
+
+## Design
+
+Sometimes we want to produce a JavaScript enabled visualization, but sometimes we can't. Maybe we are making a PDF, and so we need to use a static image instead.
+
+Under `scicloj.kindly-render.note` are several targets:
+
+* `to-hiccup` (plain)
+* `to-hiccup-js` (javascript enhanced)
+* `to-markdown`
+* `to-scittle-reagent`
+
+The main entry point for each is `render`.
+
+So when making a PDF from HTML, users would call `to-hiccup/render` and get an image, but when making a rich web page they might call `to-hiccup-js/render` and get the JavaScript enhanced HTML instead.
+
+`render` first uses `kindly-advice` to ensure that the input `note` has a completed value, and has been checked for `kindly` annotations as metadata. At this point the `note` will contain a key `:kind` which indicates the visualization requested (if any). The completed note is then passed to `render-advice` which is a multimethod that dispatches on the `:kind` to produce the target output.
+
+### A multi-method per target
+
+Each target has a multi-method called `render-advice` with methods defined for as many `:kinds` as are supported by that target.
+
+Using multi-methods allows users to use the standard features of Clojure to add or replace viewers if they would like to.
+
+#### Fallback
+
+Each multi-method has a `:default` implementation.
+If no viewer is matched in `markdown`, it will fall back to `hiccup-js`. If no viewer is matched there, then it will fall back to `hiccup`.
+Fallback only happens in one direction because `hiccup` cannot fall back to `markdown`, but `markdown` can fall back to `hiccup`. Similarly plain `hiccup` cannot fall back to `hiccup-js`, but hiccup-js can fall back to `hiccup`.
+
+### Nested visualizations
+
+Sometimes visualizations may contain other visualizations.
+For example, we may wish to present a vector containing a chart and a table.
+Data structures (vector, map, set, seq) may contain nest visualizations,
+and these in turn may contain further nesting.
+
+Each target multi-method must have a method for `:kind/vector`, `:kind/map`, `:kind/set`, and `:kind/seq` for recursively rendering that calls `util/render-hiccup-recursively`.
+
+### Hiccup
+
+Hiccup is a special data structures that requires a little more care.
+Other visualizations may be nested inside the hiccup.
+
+Each target multi-method must have a method for `:kind/hiccup` for recursively rendering that calls `util/render-hiccup-recursively`.
 
 ## Discussion
 

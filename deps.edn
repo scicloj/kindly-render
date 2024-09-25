@@ -3,7 +3,9 @@
            ;; TODO: probably we should either replace or leave it up to the user
            hiccup/hiccup                  {:mvn/version "1.0.5"}
            io.github.nextjournal/markdown {:mvn/version "0.5.148"}
+           ;; TODO: upgrade
            org.scicloj/kindly-advice      {:mvn/version "1-beta1"}
+           ;; TODO: probably users should decide if they want portal as a dependency
            org.scicloj/kind-portal        {:mvn/version "1-beta1"}
            djblue/portal                  {:mvn/version "0.57.3"}}
  :aliases {:dev   {:extra-deps  {org.scicloj/clay {:mvn/version "2-beta11"}}

@@ -6,10 +6,11 @@
             [scicloj.kindly-render.note.to-hiccup-js :as to-hiccup-js]
             [scicloj.kindly-render.note.to-hiccup :as to-hiccup]))
 
-(defmulti render* :kind)
+(defmulti render-advice :kind)
 
 (defn render [note]
-  (render* (util/derefing-advise note)))
+  (-> (util/derefing-advise note)
+      (render-advice)))
 
 (def ^:dynamic *gfm* false)
 
@@ -20,15 +21,15 @@
         (to-hiccup-js/render note))
       (hiccup/html)))
 
-(defmethod render* :default [note]
+(defmethod render-advice :default [note]
   (html note))
 
-(defmethod render* :kind/hidden [note])
+(defmethod render-advice :kind/hidden [note])
 
-(defmethod render* :kind/code [{:keys [code]}]
+(defmethod render-advice :kind/code [{:keys [code]}]
   code)
 
-(defmethod render* :kind/md [{:keys [value]}]
+(defmethod render-advice :kind/md [{:keys [value]}]
   (util/normalize-md value))
 
 (defn divide [xs]
@@ -37,7 +38,7 @@
                                  xs))
        " |"))
 
-(defmethod render* :kind/table [{:keys [value]}]
+(defmethod render-advice :kind/table [{:keys [value]}]
   (let [{:keys [column-names row-vectors]} value]
     (str (divide column-names) \newline
          (divide (repeat (count column-names) "----")) \newline
@@ -78,8 +79,8 @@
   (result-block (binding [*print-meta* true]
                   (with-out-str (pprint/pprint value)))))
 
-(defmethod render* :kind/pprint [{:keys [value]}]
+(defmethod render-advice :kind/pprint [{:keys [value]}]
   (result-pprint value))
 
 ;; Don't show vars
-(defmethod render* :kind/var [note])
+(defmethod render-advice :kind/var [note])

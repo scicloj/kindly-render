@@ -7,12 +7,13 @@
             [scicloj.kindly-render.note.to-hiccup :as to-hiccup])
   (:import (clojure.lang IDeref)))
 
-(defmulti render* :kind)
+(defmulti render-advice :kind)
 
 (defn render [note]
-  (render* (util/derefing-advise note)))
+  (-> (util/derefing-advise note)
+      (render-advice)))
 
-(defmethod render* :default [note]
+(defmethod render-advice :default [note]
   (to-hiccup/render note))
 
 (def ^:dynamic *deps* (atom #{}))
@@ -34,7 +35,7 @@
                      "https://cdn.jsdelivr.net/npm/vega-embed@6"]
    :datatables      ["js"
                      "css"]
-   :echarts ["https://cdn.jsdelivr.net/npm/echarts@5.4.1/dist/echarts.min.js"]})
+   :echarts         ["https://cdn.jsdelivr.net/npm/echarts@5.4.1/dist/echarts.min.js"]})
 
 (def transitive-deps
   {:datatables      #{:jquery}
@@ -44,7 +45,7 @@
 (defn include-js []
   (distinct (mapcat dep-includes @*deps*)))
 
-(defmethod render* :kind/hidden [note])
+(defmethod render-advice :kind/hidden [note])
 
 (defn vega [value]
   (deps :vega)
@@ -56,18 +57,18 @@
 
 ;; TODO: switch to returning maps
 #_(defn vega [value]
-  {:deps   #{:vega}
-   :hiccup [:div {:style {:width "100%"}}
-            [:script (str "vegaEmbed(document.currentScript.parentElement, "
-                          #?(:clj  (json/write-str value)
-                             :cljs (clj->js value))
-                          ");")]]})
+    {:deps   #{:vega}
+     :hiccup [:div {:style {:width "100%"}}
+              [:script (str "vegaEmbed(document.currentScript.parentElement, "
+                            #?(:clj  (json/write-str value)
+                               :cljs (clj->js value))
+                            ");")]]})
 
 
-(defmethod render* :kind/vega [{:keys [value]}]
+(defmethod render-advice :kind/vega [{:keys [value]}]
   (vega value))
 
-(defmethod render* :kind/vega-lite [{:keys [value]}]
+(defmethod render-advice :kind/vega-lite [{:keys [value]}]
   (vega value))
 
 (defn format-code [form]
@@ -97,7 +98,7 @@
      (-> [(list 'dom/render v (list 'js/document.getElementById id))]
          (scittle))]))
 
-(defmethod render* :kind/reagent [{:keys [value]}]
+(defmethod render-advice :kind/reagent [{:keys [value]}]
   (if (vector? value)
     (reagent value)
     (reagent [value])))
@@ -114,7 +115,7 @@
    \"text\": (() => " (pr-str value-str) ")},
   document.currentScript.parentElement);")]]))
 
-(defmethod render* :kind/portal [{:keys [value]}]
+(defmethod render-advice :kind/portal [{:keys [value]}]
   ;; TODO: it isn't clear that value must be a vector wrapper, but it probably is???
   ;; Wouldn't it be nicer if :tool/portal was orthogonal to :kind/vega etc...
   ;; what about :kind/chart, :grammar/vega, :tool/portal ... too much?
@@ -125,25 +126,25 @@
 
 ;; Data types that can be recursive
 
-(defmethod render* :kind/vector [{:keys [value]}]
-  (util/expand-data {:class "kind_vector"} value render))
+(defmethod render-advice :kind/vector [{:keys [value]}]
+  (util/render-data-recursively {:class "kind_vector"} value render))
 
-(defmethod render* :kind/map [{:keys [value]}]
-  (util/expand-data {:class "kind_map"} (apply concat value) render))
+(defmethod render-advice :kind/map [{:keys [value]}]
+  (util/render-data-recursively {:class "kind_map"} (apply concat value) render))
 
-(defmethod render* :kind/set [{:keys [value]}]
-  (util/expand-data {:class "kind_set"} value render))
+(defmethod render-advice :kind/set [{:keys [value]}]
+  (util/render-data-recursively {:class "kind_set"} value render))
 
-(defmethod render* :kind/seq [{:keys [value]}]
-  (util/expand-data {:class "kind_seq"} value render))
+(defmethod render-advice :kind/seq [{:keys [value]}]
+  (util/render-data-recursively {:class "kind_seq"} value render))
 
 ;; Special data type hiccup that needs careful expansion
 
-(defmethod render* :kind/hiccup [{:keys [value]}]
-  (util/expand-hiccup value render))
+(defmethod render-advice :kind/hiccup [{:keys [value]}]
+  (util/render-hiccup-recursively value render))
 
 ;; TODO: standardize json writing
-(defmethod render* :kind/echarts [{:keys [value]}]
+(defmethod render-advice :kind/echarts [{:keys [value]}]
   (deps :echarts)
   [:div {:style "height:500px"
          ;; TODO: hiccup doesn't do styles (nested maps) properly

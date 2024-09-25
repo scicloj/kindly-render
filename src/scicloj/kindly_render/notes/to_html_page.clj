@@ -21,7 +21,7 @@
     (into [:body] elements)))
 
 ;; TODO: ways to control order... sort by metadata?
-(defn notes-to-html
+(defn render-notebook
   "Creates a markdown file from a notebook"
   [{:keys [notes]}]
   (-> (mapv expr-result notes)

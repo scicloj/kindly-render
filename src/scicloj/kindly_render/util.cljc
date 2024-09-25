@@ -34,16 +34,16 @@
       (and (seq? tag)
            (= 'fn (first tag)))))
 
-(defn expand-data
+(defn render-data-recursively
   "Data kinds like vectors, maps, sets, and seqs are recursively rendered."
   [props vs render]
   (into [:div props]
         (for [v vs]
           [:div {:style {:border  "1px solid grey"
                          :padding "2px"}}
-           (render (derefing-advise {:value v}))])))
+           (render {:value v})])))
 
-(defn expand-hiccup
+(defn render-hiccup-recursively
   "Traverses a hiccup tree, and returns a hiccup tree.
   Kinds encountered get rendered to hiccup,
   making a larger hiccup structure that can be converted to HTML.
@@ -61,8 +61,8 @@
             (cond (reagent? tag) (render {:kind :kind/reagent :value hiccup})
                   (seq? tag) (render {:kind :kind/scittle :value hiccup})
                   :else (if attrs
-                          (into [tag attrs] (map #(expand-hiccup % render)) (next children))
-                          (into [tag] (map #(expand-hiccup % render)) children))))
+                          (into [tag attrs] (map #(render-hiccup-recursively % render)) (next children))
+                          (into [tag] (map #(render-hiccup-recursively % render)) children))))
 
           :else
           hiccup)))

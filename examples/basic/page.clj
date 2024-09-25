@@ -42,10 +42,10 @@
   (let [x (update notebook :notes
                   (fn [notes]
                     (map kindly-advice/advise notes)))]
-    (->> (m/notes-to-md x)
+    (->> (m/render-notebook x)
          (spit "basic.md"))
 
-    (->> (h/notes-to-html x)
+    (->> (h/render-notebook x)
          (spit "basic.html"))))
 
 (comment

@@ -3,67 +3,68 @@
             [scicloj.kindly-render.util :as util]
             [scicloj.kindly-render.from-markdown :as from-markdown]))
 
-(defmulti render* :kind)
+(defmulti render-advice :kind)
 
 (defn render [note]
-  (render* (util/derefing-advise note)))
+  (-> (util/derefing-advise note)
+      (render-advice)))
 
-(defmethod render* :default [{:keys [value kind]}]
+(defmethod render-advice :default [{:keys [value kind]}]
   (if kind
     [:div
      [:div "Unimplemented: " [:code (pr-str kind)]]
      [:code (pr-str value)]]
     (str value)))
 
-(defmethod render* :kind/hidden [note])
+(defmethod render-advice :kind/hidden [note])
 
 ;; Don't show vars
-(defmethod render* :kind/var [note])
+(defmethod render-advice :kind/var [note])
 
 ;; TODO: we might not want this
-(defmethod render* :kind/md [{:keys [value]}]
+(defmethod render-advice :kind/md [{:keys [value]}]
   (from-markdown/hiccup value))
 
 (defn pprint [value]
   [:pre [:code (binding [*print-meta* true]
                  (with-out-str (pprint/pprint value)))]])
 
-(defmethod render* :kind/pprint [{:keys [value]}]
+(defmethod render-advice :kind/pprint [{:keys [value]}]
   (pprint value))
 
-(defmethod render* :kind/image [{:keys [value]}]
+(defmethod render-advice :kind/image [{:keys [value]}]
   (if (string? value)
     [:img {:src value}]
     [:div "Image kind not implemented"]))
 
-(defmethod render* :kind/table [{:keys [value]}]
+(defmethod render-advice :kind/table [{:keys [value]}]
   (let [{:keys [column-names row-vectors]} value]
     [:table
      [:thead
       (into [:tr]
             (for [header column-names]
-              [:th (render* header)]))]
+              [:th (render-advice header)]))]
      (into [:tbody]
            (for [row row-vectors]
              (into [:tr]
                    (for [column row]
-                     [:td (render* column)]))))]))
+                     [:td (render-advice column)]))))]))
 
 ;; Data types that can be recursive
 
-(defmethod render* :kind/vector [{:keys [value]}]
-  (util/expand-data {:class "kind_vector"} value render))
+(defmethod render-advice :kind/vector [{:keys [value]}]
+  (util/render-data-recursively {:class "kind_vector"} value render))
 
-(defmethod render* :kind/map [{:keys [value]}]
-  (util/expand-data {:class "kind_map"} (apply concat value) render))
+(defmethod render-advice :kind/map [{:keys [value]}]
+  (util/render-data-recursively {:class "kind_map"} (apply concat value) render))
 
-(defmethod render* :kind/set [{:keys [value]}]
-  (util/expand-data {:class "kind_set"} value render))
+(defmethod render-advice :kind/set [{:keys [value]}]
+  (util/render-data-recursively {:class "kind_set"} value render))
 
-(defmethod render* :kind/seq [{:keys [value]}]
-  (util/expand-data {:class "kind_seq"} value render))
+(defmethod render-advice :kind/seq [{:keys [value]}]
+  (util/render-data-recursively {:class "kind_seq"} value render))
 
 ;; Special data type hiccup that needs careful expansion
 
-(defmethod render* :kind/hiccup [{:keys [value]}]
-  (util/expand-hiccup value render))
+(defmethod render-advice :kind/hiccup [{:keys [value]}]
+  (util/render-hiccup-recursively value render))

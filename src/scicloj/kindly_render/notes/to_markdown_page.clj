@@ -101,7 +101,7 @@
                                          '[reagent.dom :as dom]
                                          '[clojure.str :as str])])))))
 
-(defn notes-to-md
+(defn render-notebook
   "Creates a markdown file from a notebook"
   [{:keys [notes gfm]}]
   (binding [to-markdown/*gfm* gfm
