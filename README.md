@@ -81,10 +81,14 @@ Under `scicloj.kindly-render.note` are several targets:
 * `to-scittle-reagent`
 
 The main entry point for each is `render`.
+When making a PDF from HTML, users would call `to-hiccup/render` and get an image, but when making a rich web page they might call `to-hiccup-js/render` and get the JavaScript enhanced HTML instead.
 
-So when making a PDF from HTML, users would call `to-hiccup/render` and get an image, but when making a rich web page they might call `to-hiccup-js/render` and get the JavaScript enhanced HTML instead.
+`render` calls `kindly-advice/advise` which ensures that the input `note` has a completed value.
+Completion means that if `note` only contained a `:form`, that form would be evaluated to produce a value and added as `:value`.
+Furthermore, both the form and value are checked for kindly annotations as metadata, or the kind may be inferred.
+At this point the `note` will contain a key `:kind` which indicates the visualization requested (if any).
 
-`render` first uses `kindly-advice` to ensure that the input `note` has a completed value, and has been checked for `kindly` annotations as metadata. At this point the `note` will contain a key `:kind` which indicates the visualization requested (if any). The completed note is then passed to `render-advice` which is a multimethod that dispatches on the `:kind` to produce the target output.
+The completed note is passed to `render-advice` which is a multimethod that dispatches on the `:kind` to produce the target output.
 
 ### A multi-method per target
 
@@ -95,17 +99,23 @@ Using multi-methods allows users to use the standard features of Clojure to add 
 #### Fallback
 
 Each multi-method has a `:default` implementation.
-If no viewer is matched in `markdown`, it will fall back to `hiccup-js`. If no viewer is matched there, then it will fall back to `hiccup`.
-Fallback only happens in one direction because `hiccup` cannot fall back to `markdown`, but `markdown` can fall back to `hiccup`. Similarly plain `hiccup` cannot fall back to `hiccup-js`, but hiccup-js can fall back to `hiccup`.
+If no viewer is matched in `markdown`, it will fall back to `hiccup-js`.
+If no viewer is matched there, then it will fall back to `hiccup`.
+Fallback only happens in one direction because `hiccup` cannot fall back to `markdown`, but `markdown` can fall back to `hiccup`.
+Markdown is not valid HTML, however it should be noted that hiccup may contain markdown values like `(kind/md "# this is markdown")`,
+these will be converted to HTML by the hiccup renderer.
+Similarly plain `hiccup` cannot fall back to `hiccup-js`, but hiccup-js can fall back to `hiccup`.
 
 ### Nested visualizations
 
 Sometimes visualizations may contain other visualizations.
 For example, we may wish to present a vector containing a chart and a table.
-Data structures (vector, map, set, seq) may contain nest visualizations,
+Data structures may contain nest visualizations,
 and these in turn may contain further nesting.
 
-Each target multi-method must have a method for `:kind/vector`, `:kind/map`, `:kind/set`, and `:kind/seq` for recursively rendering that calls `walk/render-hiccup-recursively`.
+Nesting kinds are: `:kind/vector`, `:kind/map`, `:kind/set`, `:kind/seq`, `:kind/hiccup` and `:kind/table`.
+
+Each target multi-method must have a method for each nesting kind that calls `walk/render-hiccup-recursively`.
 
 ### Hiccup
 
