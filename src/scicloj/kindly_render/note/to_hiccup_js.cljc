@@ -1,18 +1,20 @@
 (ns scicloj.kindly-render.note.to-hiccup-js
-  (:require #?(:clj [clojure.data.json :as json])
-            [clojure.pprint :as pprint]
+  (:require [clojure.pprint :as pprint]
             [clojure.string :as str]
             [scicloj.kind-portal.v1.api :as kpi]
-            [scicloj.kindly-render.util :as util]
+            [scicloj.kindly-render.shared.walk :as walk]
+            [scicloj.kindly-render.shared.util :as util]
             [scicloj.kindly-render.note.to-hiccup :as to-hiccup])
   (:import (clojure.lang IDeref)))
 
-(defmulti render* :kind)
+(defmulti render-advice :kind)
 
 (defn render [note]
-  (render* (util/derefing-advise note)))
+  (-> (walk/derefing-advise note)
+      (render-advice)))
 
-(defmethod render* :default [note]
+;; fallback to regular hiccup
+(defmethod render-advice :default [note]
   (to-hiccup/render note))
 
 (def ^:dynamic *deps* (atom #{}))
@@ -34,7 +36,7 @@
                      "https://cdn.jsdelivr.net/npm/vega-embed@6"]
    :datatables      ["js"
                      "css"]
-   :echarts ["https://cdn.jsdelivr.net/npm/echarts@5.4.1/dist/echarts.min.js"]})
+   :echarts         ["https://cdn.jsdelivr.net/npm/echarts@5.4.1/dist/echarts.min.js"]})
 
 (def transitive-deps
   {:datatables      #{:jquery}
@@ -44,30 +46,19 @@
 (defn include-js []
   (distinct (mapcat dep-includes @*deps*)))
 
-(defmethod render* :kind/hidden [note])
+(defmethod render-advice :kind/hidden [note])
 
 (defn vega [value]
   (deps :vega)
   [:div {:style {:width "100%"}}
    [:script (str "vegaEmbed(document.currentScript.parentElement, "
-                 #?(:clj  (json/write-str value)
-                    :cljs (clj->js value))
+                 (util/json-str value)
                  ");")]])
 
-;; TODO: switch to returning maps
-#_(defn vega [value]
-  {:deps   #{:vega}
-   :hiccup [:div {:style {:width "100%"}}
-            [:script (str "vegaEmbed(document.currentScript.parentElement, "
-                          #?(:clj  (json/write-str value)
-                             :cljs (clj->js value))
-                          ");")]]})
-
-
-(defmethod render* :kind/vega [{:keys [value]}]
+(defmethod render-advice :kind/vega [{:keys [value]}]
   (vega value))
 
-(defmethod render* :kind/vega-lite [{:keys [value]}]
+(defmethod render-advice :kind/vega-lite [{:keys [value]}]
   (vega value))
 
 (defn format-code [form]
@@ -79,28 +70,28 @@
   [:script {:type "application/x-scittle"}
    (str/join \newline (map format-code forms))])
 
+(def ^:dynamic *id-counter*
+  "starting id for id generation,
+  for consistent ids consider binding to 0 per html page"
+  0)
+
+(def ^:dynamic *id-prefix*
+  "an optional prefix when generating html element ids"
+  nil)
+
 (defn no-spaces [s]
-  (str/replace s #"\s" "-"))
+  (when s (str/replace s #"\s" "-")))
 
-(def ^:dynamic *scope-name*)
-
-(def ^:dynamic *counter*)
-
-;; TODO: scopes!
 (defn gen-id []
-  (str (no-spaces *scope-name*) "-" (swap! *counter* inc)))
+  (str (no-spaces *id-prefix*) "-" (swap! *id-counter* inc)))
 
-(defn reagent [v]
+(defmethod render-advice :kind/reagent [{:keys [value]}]
   (deps :reagent)
   (let [id (gen-id)]
     [:div {:id id}
-     (-> [(list 'dom/render v (list 'js/document.getElementById id))]
-         (scittle))]))
-
-(defmethod render* :kind/reagent [{:keys [value]}]
-  (if (vector? value)
-    (reagent value)
-    (reagent [value])))
+     (scittle [(list 'dom/render
+                     (if (vector? value) value [value])
+                     (list 'js/document.getElementById id))])]))
 
 (defn portal [note]
   (deps :portal)
@@ -114,7 +105,7 @@
    \"text\": (() => " (pr-str value-str) ")},
   document.currentScript.parentElement);")]]))
 
-(defmethod render* :kind/portal [{:keys [value]}]
+(defmethod render-advice :kind/portal [{:keys [value]}]
   ;; TODO: it isn't clear that value must be a vector wrapper, but it probably is???
   ;; Wouldn't it be nicer if :tool/portal was orthogonal to :kind/vega etc...
   ;; what about :kind/chart, :grammar/vega, :tool/portal ... too much?
@@ -125,36 +116,102 @@
 
 ;; Data types that can be recursive
 
-(defmethod render* :kind/vector [{:keys [value]}]
-  (util/expand-data {:class "kind_vector"} value render))
+(defmethod render-advice :kind/vector [{:keys [value]}]
+  (walk/render-data-recursively {:class "kind_vector"} value render-advice))
 
-(defmethod render* :kind/map [{:keys [value]}]
-  (util/expand-data {:class "kind_map"} (apply concat value) render))
+(defmethod render-advice :kind/map [{:keys [value]}]
+  (walk/render-data-recursively {:class "kind_map"} (apply concat value) render-advice))
 
-(defmethod render* :kind/set [{:keys [value]}]
-  (util/expand-data {:class "kind_set"} value render))
+(defmethod render-advice :kind/set [{:keys [value]}]
+  (walk/render-data-recursively {:class "kind_set"} value render-advice))
 
-(defmethod render* :kind/seq [{:keys [value]}]
-  (util/expand-data {:class "kind_seq"} value render))
+(defmethod render-advice :kind/seq [{:keys [value]}]
+  (walk/render-data-recursively {:class "kind_seq"} value render-advice))
 
 ;; Special data type hiccup that needs careful expansion
 
-(defmethod render* :kind/hiccup [{:keys [value]}]
-  (util/expand-hiccup value render))
+(defmethod render-advice :kind/hiccup [{:keys [value]}]
+  (walk/render-hiccup-recursively value render-advice))
+
+(defmethod render-advice :kind/tex [{:keys [value]}]
+  (deps :katex)
+  (into [:div]
+        (for [s (if (vector? value) value [value])]
+          [:div
+           [:script
+            (format "katex.render(%s, document.currentScript.parentElement, {throwOnError: false});"
+                    (util/json-str s))]])))
+
+(defn extract-style [note]
+  (-> note
+      :kindly/options
+      :element/style
+      (or {:height "400px"
+           :width  "100%"})))
+
+(defmethod render-advice :kind/cytoscape [{:keys [value]
+                                           :as   note}]
+  (deps :cytoscape)
+  [:div
+   {:style (extract-style note)}
+   [:script (format "
+{
+value = %s;
+value['container'] = document.currentScript.parentElement;
+cytoscape(value);
+};"
+                    (util/json-str value))]])
 
 ;; TODO: standardize json writing
-(defmethod render* :kind/echarts [{:keys [value]}]
+(defmethod render-advice :kind/echarts [{:keys [value]
+                                         :as   note}]
   (deps :echarts)
-  [:div {:style "height:500px"
-         ;; TODO: hiccup doesn't do styles (nested maps) properly
-         #_{:height "500px"}}
-   ;;{:style (extract-style context)}
-   [:script
-    (->> #?(:clj  (json/write-str value)
-            :cljs (clj->js value))
-         (format
-           "
+  [:div {:style (extract-style note)}
+   [:script (format "
 {
 var myChart = echarts.init(document.currentScript.parentElement);
 myChart.setOption(%s);
-};"))]])
+};"
+                    (util/json-str value))]])
+
+(defmethod render-advice :kind/plotly [{:keys [value]}]
+  (deps :plotly)
+  (let [{:keys [data layout config]
+         :or   {layout {}
+                config {}}} value]
+    [:div
+     [:script
+      (format
+        "Plotly.newPlot(document.currentScript.parentElement,
+%s, %s, %s);"
+        (util/json-str data)
+        (util/json-str layout)
+        (util/json-str config))]]))
+
+(defmethod render-advice :kind/ggplotly [{:keys [value]
+                                          :as   note}]
+  (deps :htmlwidgets-ggplotly)
+  (let [id (gen-id)]
+    [:div {:class "plotly html-widget html-fill-item-overflow-hidden html-fill-item"
+           :id    id
+           :style (extract-style note)}
+     [:script {:type     "application/htmlwidget-sizing"
+               :data-for id}
+      (util/json-str {:viewer  {:width   "100%"
+                                :height  400
+                                :padding "0"
+                                :fille   true}
+                      :browser {:width   "100%"
+                                :height  400
+                                :padding "0"
+                                :fille   true}})]
+     [:script {:type     "application/json"
+               :data-for id}
+      (util/json-str value)]]))
+
+(defmethod render-advice :kind/highcharts [{:keys [value]}]
+  (deps :highcharts)
+  [:div
+   [:script
+    (format "Highcharts.chart(document.currentScript.parentElement, %s);"
+            (util/json-str value))]])

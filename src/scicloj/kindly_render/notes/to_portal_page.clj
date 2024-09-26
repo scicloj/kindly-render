@@ -12,6 +12,6 @@
      (to-hiccup-js/portal note)]
     [:div (:code note)]))
 
-(defn notes-to-html-portal [{:keys [notes]}]
+(defn render-notebook [{:keys [notes]}]
   (-> (mapv expr-result notes)
       (html/page)))

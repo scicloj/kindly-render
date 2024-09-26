@@ -1,7 +1,7 @@
 (ns basic.page
   (:require [scicloj.kindly-advice.v1.api :as kindly-advice]
-            [scicloj.kindly-render.notes.to-html-page :as h]
-            [scicloj.kindly-render.notes.to-markdown-page :as m]
+            [scicloj.kindly-render.notes.to-html-page :as to-html-page]
+            [scicloj.kindly-render.notes.to-markdown-page :as to-markdown-page]
             [scicloj.kindly.v4.kind :as kind]))
 
 (def chart
@@ -16,16 +16,25 @@
                             :data [5 20 36
                                    10 10 20]}]}))
 
+(def hiccup-list
+  (kind/hiccup
+    [:div {:style {:background "#efe9e6"
+                   :border-style :solid}}
+     [:ul
+      [:li "one"]
+      [:li "two"]
+      [:li "three"]]]))
+
 (def notebook
   {:notes [
            ;; single kind
-           ;;{:value chart}
+           {:value hiccup-list}
 
            ;; basic hiccup
-           ;;{:value (kind/hiccup [:div {} chart chart])}
+           {:value (kind/hiccup [:div {} chart chart])}
 
            ;; nested hiccup
-           #_{:value (kind/hiccup [:div {}
+           {:value (kind/hiccup [:div {}
                                    [:div chart chart]])}
 
            ;; nested vector inside hiccup
@@ -38,15 +47,10 @@
            ]})
 
 (defn -main [& args]
-  ;; TODO: call advise if there is no advice already later in the chain.
-  (let [x (update notebook :notes
-                  (fn [notes]
-                    (map kindly-advice/advise notes)))]
-    (->> (m/notes-to-md x)
-         (spit "basic.md"))
-
-    (->> (h/notes-to-html x)
-         (spit "basic.html"))))
+  (->> (to-markdown-page/render-notebook notebook)
+       (spit "basic.md"))
+  (->> (to-html-page/render-notebook notebook)
+       (spit "basic.html")))
 
 (comment
   (-main))
@@ -54,5 +58,3 @@
 ;; TODO:
 ;; 1. Does it work for Clay?
 ;; 2. Does it work from ClojureScript?
-
-;; TODO: Nested stuff
