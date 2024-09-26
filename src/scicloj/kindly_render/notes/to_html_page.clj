@@ -1,15 +1,13 @@
 (ns scicloj.kindly-render.notes.to-html-page
   (:require [hiccup.page :as page]
-            [scicloj.kindly-render.note.to-hiccup-js :as to-hiccup-js]
-            [scicloj.kindly-render.util :as util]))
+            [scicloj.kindly-render.note.to-hiccup-js :as to-hiccup-js]))
 
 (defn expr-result [{:keys [code] :as note}]
-  ;; TODO: handle errors (in adapter???)
   [:div
    ;; code
    [:pre [:code code]]
    ;; value
-   (to-hiccup-js/render (util/derefing-advise note))])
+   (to-hiccup-js/render note)])
 
 (defn page [elements]
   (page/html5
@@ -20,7 +18,6 @@
                                       '[reagent.dom :as dom])])]
     (into [:body] elements)))
 
-;; TODO: ways to control order... sort by metadata?
 (defn render-notebook
   "Creates a markdown file from a notebook"
   [{:keys [notes]}]

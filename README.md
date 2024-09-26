@@ -105,14 +105,14 @@ For example, we may wish to present a vector containing a chart and a table.
 Data structures (vector, map, set, seq) may contain nest visualizations,
 and these in turn may contain further nesting.
 
-Each target multi-method must have a method for `:kind/vector`, `:kind/map`, `:kind/set`, and `:kind/seq` for recursively rendering that calls `util/render-hiccup-recursively`.
+Each target multi-method must have a method for `:kind/vector`, `:kind/map`, `:kind/set`, and `:kind/seq` for recursively rendering that calls `walk/render-hiccup-recursively`.
 
 ### Hiccup
 
 Hiccup is a special data structures that requires a little more care.
 Other visualizations may be nested inside the hiccup.
 
-Each target multi-method must have a method for `:kind/hiccup` for recursively rendering that calls `util/render-hiccup-recursively`.
+Each target multi-method must have a method for `:kind/hiccup` for recursively rendering that calls `walk/render-hiccup-recursively`.
 
 ## Discussion
 
