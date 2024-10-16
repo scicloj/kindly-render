@@ -124,6 +124,11 @@ Other visualizations may be nested inside the hiccup.
 
 Each target multi-method must have a method for `:kind/hiccup` for recursively rendering that calls `walk/render-hiccup-recursively`.
 
+### Optional dependencies
+
+`kind-portal` is excluded by default. In order to use Portal you will need to add it to your
+`deps.edn` file.
+
 ## Discussion
 
 Regular updates are given at the [visual-tools meetings](https://scicloj.github.io/docs/community/groups/visual-tools/).

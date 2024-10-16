@@ -25,8 +25,15 @@
       [:li "two"]
       [:li "three"]]]))
 
+(def portal
+  (kind/portal {:foo "bar"}))
+
 (def notebook
   {:notes [
+           ;; kind-portal is not loaded, so this should render a short
+           ;; message explaining its absence
+           {:value portal}
+           
            ;; single kind
            {:value hiccup-list}
 

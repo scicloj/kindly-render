@@ -1,7 +1,6 @@
 (ns scicloj.kindly-render.note.to-hiccup-js
   (:require [clojure.pprint :as pprint]
             [clojure.string :as str]
-            [scicloj.kind-portal.v1.api :as kpi]
             [scicloj.kindly-render.shared.walk :as walk]
             [scicloj.kindly-render.shared.util :as util]
             [scicloj.kindly-render.note.to-hiccup :as to-hiccup])
@@ -93,17 +92,26 @@
                      (if (vector? value) value [value])
                      (list 'js/document.getElementById id))])]))
 
+(def portal-enabled?
+  (try
+    (require 'scicloj.kind-portal.v1.api)
+    true
+    (catch Throwable _ false)))
+
 (defn portal [note]
-  (deps :portal)
-  (let [portal-value (kpi/prepare note)
-        value-str (binding [*print-meta* true]
-                    (pr-str portal-value))]
-    [:div
-     [:script
-      (str "portal.extensions.vs_code_notebook.activate().renderOutputItem(
+  (if portal-enabled?
+    (do 
+      (deps :portal)
+      (let [portal-value (apply (ns-resolve 'scicloj.kind-portal.v1.api 'prepare) note)
+            value-str (binding [*print-meta* true]
+                        (pr-str portal-value))]
+        [:div
+         [:script
+          (str "portal.extensions.vs_code_notebook.activate().renderOutputItem(
   {\"mime\": \"x-application/edn\",
    \"text\": (() => " (pr-str value-str) ")},
   document.currentScript.parentElement);")]]))
+    [:pre "kind-portal not included in dependencies"]))
 
 (defmethod render-advice :kind/portal [{:keys [value]}]
   ;; TODO: it isn't clear that value must be a vector wrapper, but it probably is???
