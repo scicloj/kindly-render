@@ -97,11 +97,13 @@
           (util/kind-str value)))
 
 #?(:clj
+   (resolve 'tech.v3.dataset.print/print-range))
+#?(:clj
    (defmethod render-advice :kind/dataset [{:keys [value kindly/options]}]
      (let [{:keys [dataset/print-range]} options]
        (-> value
            (cond-> print-range
-                   ((resolve 'tech.v3.dataset.print/print-range) print-range))
+                   (tech.v3.dataset.print/print-range print-range))
            (println)
            (with-out-str)))))
 
