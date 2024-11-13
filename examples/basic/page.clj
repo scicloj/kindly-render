@@ -1,8 +1,8 @@
 (ns basic.page
-  (:require [scicloj.kindly-advice.v1.api :as kindly-advice]
-            [scicloj.kindly-render.notes.to-html-page :as to-html-page]
+  (:require [scicloj.kindly-render.notes.to-html-page :as to-html-page]
             [scicloj.kindly-render.notes.to-markdown-page :as to-markdown-page]
-            [scicloj.kindly.v4.kind :as kind]))
+            [scicloj.kindly.v4.kind :as kind]
+            [tech.v3.dataset :as td]))
 
 (def chart
   (kind/echarts {:title   {:text "Echarts Example"}
@@ -18,7 +18,7 @@
 
 (def hiccup-list
   (kind/hiccup
-    [:div {:style {:background "#efe9e6"
+    [:div {:style {:background   "#efe9e6"
                    :border-style :solid}}
      [:ul
       [:li "one"]
@@ -28,12 +28,17 @@
 (def portal
   (kind/portal {:foo "bar"}))
 
+(def dataset
+  (td/->dataset {:x (range 5)
+                 :y (repeatedly 5 rand)}
+                {:dataset-name "my dataset"}))
+
 (def notebook
   {:notes [
            ;; kind-portal is not loaded, so this should render a short
            ;; message explaining its absence
            {:value portal}
-           
+
            ;; single kind
            {:value hiccup-list}
 
@@ -42,7 +47,7 @@
 
            ;; nested hiccup
            {:value (kind/hiccup [:div {}
-                                   [:div chart chart]])}
+                                 [:div chart chart]])}
 
            ;; nested vector inside hiccup
            {:value (kind/hiccup [:div {}
@@ -50,6 +55,8 @@
 
            ;; What happens to markdown?
            {:value (kind/md "Hello, this is some text")}
+
+           {:value dataset}
 
            ]})
 
