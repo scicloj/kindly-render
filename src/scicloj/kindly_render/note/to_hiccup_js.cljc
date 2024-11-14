@@ -93,9 +93,16 @@
                      (if (vector? value) value [value])
                      (list 'js/document.getElementById id))])]))
 
-(defmethod render-advice :kind/scittle [{:keys [form]}]
+(defmethod render-advice :kind/scittle [{:keys [code form]}]
   (deps :scittle)
-  (scittle [form]))
+  (let [forms (if (vector? form) form [form])]
+    [:div
+     ;; TODO: we may or may not want to show the code, we should at least respect the "hidden"
+     [:pre [:code (or code (str/join \newline forms))]]
+     ;; TODO: we might want to also show the result...
+     ;; this would require updating the dom after the scittle executes,
+     ;; which is a bit tricky and maybe not important.
+     (scittle forms)]))
 
 (def portal-enabled?
   (try

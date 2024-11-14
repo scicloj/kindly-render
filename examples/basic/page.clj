@@ -69,9 +69,10 @@
            ;; scittle and reagent in hiccup
            {:value (kind/hiccup [:div "Hello world"
                                  ;; scittle
-                                 '[(println "hello world from scittle")]
+                                 '[(println "hello world from scittle")
+                                   (defn my-ui [props] [:div "This component was defined previously"])]
                                  ;; reagent component
-                                 ;;'[my-ui]
+                                 '[my-ui]
                                  ;; reagent inline component
                                  '[(fn [props]
                                      [:div "I'm a reagent component"])]])}

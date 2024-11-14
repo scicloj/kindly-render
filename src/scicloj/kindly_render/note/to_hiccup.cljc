@@ -18,6 +18,9 @@
      [:code (pr-str value)]]
     (str value)))
 
+(defmethod render-advice :kind/code [{:keys [code]}]
+  [:pre [:code code]])
+
 (defmethod render-advice :kind/hidden [note])
 
 ;; Don't show vars
