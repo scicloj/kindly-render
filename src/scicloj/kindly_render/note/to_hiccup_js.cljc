@@ -93,16 +93,14 @@
                      (if (vector? value) value [value])
                      (list 'js/document.getElementById id))])]))
 
-(defmethod render-advice :kind/scittle [{:keys [code form]}]
+(defmethod render-advice :kind/scittle [{:keys [form value]}]
   (deps :scittle)
-  (let [forms (if (vector? form) form [form])]
-    [:div
-     ;; TODO: we may or may not want to show the code, we should at least respect the "hidden"
-     [:pre [:code (or code (str/join \newline forms))]]
-     ;; TODO: we might want to also show the result...
-     ;; this would require updating the dom after the scittle executes,
-     ;; which is a bit tricky and maybe not important.
-     (scittle forms)]))
+  ;; quoted forms will be unquoted in the scittle output because they should have no effect in Clojure
+  ;; unquoted forms may cause effects in Clojure and appear as a scittle script
+  (let [forms (if (and (seq? form) (= 'quote (first form)))
+                [value]
+                (if (vector? form) form [form]))]
+    (scittle forms)))
 
 (def portal-enabled?
   (try
