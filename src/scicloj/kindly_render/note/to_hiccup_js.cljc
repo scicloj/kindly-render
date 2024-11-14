@@ -43,7 +43,8 @@
    :scittle-reagent #{:scittle}})
 
 (defn include-js []
-  (distinct (mapcat dep-includes @*deps*)))
+  ;; TODO: sort is just lucky because reagent comes before scittle
+  (distinct (mapcat dep-includes (sort @*deps*))))
 
 (defmethod render-advice :kind/hidden [note])
 
@@ -72,7 +73,7 @@
 (def ^:dynamic *id-counter*
   "starting id for id generation,
   for consistent ids consider binding to 0 per html page"
-  0)
+  (atom 0))
 
 (def ^:dynamic *id-prefix*
   "an optional prefix when generating html element ids"
@@ -85,12 +86,16 @@
   (str (no-spaces *id-prefix*) "-" (swap! *id-counter* inc)))
 
 (defmethod render-advice :kind/reagent [{:keys [value]}]
-  (deps :reagent)
+  (deps :reagent :scittle-reagent)
   (let [id (gen-id)]
     [:div {:id id}
      (scittle [(list 'dom/render
                      (if (vector? value) value [value])
                      (list 'js/document.getElementById id))])]))
+
+(defmethod render-advice :kind/scittle [{:keys [form]}]
+  (deps :scittle)
+  (scittle [form]))
 
 (def portal-enabled?
   (try
@@ -100,7 +105,7 @@
 
 (defn portal [note]
   (if portal-enabled?
-    (do 
+    (do
       (deps :portal)
       (let [portal-value (apply (ns-resolve 'scicloj.kind-portal.v1.api 'prepare) note)
             value-str (binding [*print-meta* true]

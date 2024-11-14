@@ -113,13 +113,17 @@
       :allowfullscreen allowfullscreen})])
 
 #?(:clj
-   (resolve 'tech.v3.dataset.print/print-range))
-#?(:clj
    (defmethod render-advice :kind/dataset [{:keys [value kindly/options]}]
      (let [{:keys [dataset/print-range]} options]
        (-> value
            (cond-> print-range
-                   (tech.v3.dataset.print/print-range print-range))
+                   ((resolve 'tech.v3.dataset.print/print-range) print-range))
            (println)
            (with-out-str)
            (from-markdown/to-hiccup)))))
+
+(defmethod render-advice :kind/tex [{:keys [value]}]
+  (->> (if (vector? value) value [value])
+       (map (partial format "$$%s$$"))
+       (str/join \newline)
+       (from-markdown/to-hiccup)))
