@@ -14,8 +14,7 @@
                  :series  [{:name "sales"
                             :type "bar"
                             :data [5 20 36
-                                   10 10 20]}]}
-                {:style {:width "50px"}}))
+                                   10 10 20]}]}))
 
 (def hiccup-list
   (kind/hiccup
