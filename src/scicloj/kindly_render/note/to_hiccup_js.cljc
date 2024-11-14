@@ -97,7 +97,8 @@
   (deps :scittle)
   ;; quoted forms will be unquoted in the scittle output because they should have no effect in Clojure
   ;; unquoted forms may cause effects in Clojure and appear as a scittle script
-  (let [forms (if (and (seq? form) (= 'quote (first form)))
+  (let [forms (if (or (and (seq? form) (= 'quote (first form)))
+                      (nil? form))
                 [value]
                 (if (vector? form) form [form]))]
     (scittle forms)))

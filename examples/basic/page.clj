@@ -66,6 +66,10 @@
            {:form (with-meta '(defn f [x] (* x 0.9))
                              {:kindly/kind :kind/scittle})}
 
+           ;; quoted scittle still creates a script, it does not have side effects in Clojure
+           {:value (with-meta '(defn g [x] (+ x 2))
+                              {:kindly/kind :kind/scittle})}
+
            ;; scittle and reagent in hiccup
            {:value (kind/hiccup [:div "Hello world"
                                  ;; scittle
