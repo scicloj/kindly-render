@@ -11,11 +11,13 @@
 
 (defn page [elements]
   (page/html5
-    [:head
-     (page/include-css "style.css")
-     (apply page/include-js (to-hiccup-js/include-js))
-     (to-hiccup-js/scittle '[(require '[reagent.core :as r :refer [atom]]
-                                      '[reagent.dom :as dom])])]
+    (cond->
+      [:head
+       (page/include-css "style.css")
+       (apply page/include-js (to-hiccup-js/include-js))]
+      (:scittle-reagent @to-hiccup-js/*deps*)
+      (conj (to-hiccup-js/scittle '[(require '[reagent.core :as r :refer [atom]]
+                                             '[reagent.dom :as dom])])))
     (into [:body] elements)))
 
 (defn render-notebook

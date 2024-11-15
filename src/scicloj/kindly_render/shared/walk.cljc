@@ -30,13 +30,13 @@
 
 (defn reagent?
   "Reagent components may be requested by symbol: `[my-component 1]`
-   or by an inline function: `['(fn [] [:h1 123])]`"
+   or by an inline function: `'[(fn [] [:h1 123])]`"
   [tag]
   (or (symbol? tag)
       (and (seq? tag) (= 'fn (first tag)))))
 
 (defn scittle?
-  "Scittle code can be written as `[(println 'hello)]`"
+  "Scittle code can be written as `'[(println hello)]`"
   [tag]
   (seq? tag))
 
@@ -75,7 +75,7 @@
                 c (first children)
                 attrs (and (map? c) (not (visualization c)) c)]
             (cond (reagent? tag) (render-advice {:kind :kind/reagent :value hiccup})
-                  (scittle? tag) (render-advice {:kind :kind/scittle :value hiccup})
+                  (scittle? tag) (render-advice {:kind :kind/scittle :form hiccup})
                   :else (if attrs
                           (into [tag attrs] (map #(render-hiccup-recursively % render-advice)) (next children))
                           (into [tag] (map #(render-hiccup-recursively % render-advice)) children))))

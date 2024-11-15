@@ -58,6 +58,29 @@
 
            {:value dataset}
 
+           ;; I want to define a function available in scittle (ClojureScript) and Clojure
+           ;; run it/test it in Clojure, and run it in the notebook
+           ;; use case: Physics simulation of gravity.
+           ;; I don't want to quote my function.
+           ;; In this case we want to make use of form instead of value.
+           {:form (with-meta '(defn f [x] (* x 0.9))
+                             {:kindly/kind :kind/scittle})}
+
+           ;; quoted scittle still creates a script, it does not have side effects in Clojure
+           {:value (with-meta '(defn g [x] (+ x 2))
+                              {:kindly/kind :kind/scittle})}
+
+           ;; scittle and reagent in hiccup
+           {:value (kind/hiccup [:div "Hello world"
+                                 ;; scittle
+                                 '[(println "hello world from scittle")
+                                   (defn my-ui [props] [:div "This component was defined previously"])]
+                                 ;; reagent component
+                                 '[my-ui]
+                                 ;; reagent inline component
+                                 '[(fn [props]
+                                     [:div "I'm a reagent component"])]])}
+
            ]})
 
 (defn -main [& args]
