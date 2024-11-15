@@ -20,13 +20,12 @@
 
 (defn render-data-recursively
   "Data kinds like vectors, maps, sets, and seqs are recursively rendered."
-  [props vs render-advice]
+  [props vs render]
   (into [:div props]
         (for [v vs]
           [:div {:style {:border  "1px solid grey"
                          :padding "2px"}}
-           (-> (derefing-advise {:value v})
-               (render-advice))])))
+           (render {:value v})])))
 
 (defn reagent?
   "Reagent components may be requested by symbol: `[my-component 1]`
@@ -64,21 +63,35 @@
   Kinds encountered get rendered to hiccup,
   making a larger hiccup structure that can be converted to HTML.
   Data kinds like vectors, maps, sets, and seqs are recursively rendered."
-  [hiccup render-advice]
+  [hiccup render]
   (if-let [note (visualization hiccup)]
-    (render-advice note)
+    (render note)
     (cond (instance? IDeref hiccup)
-          (recur @hiccup render-advice)
+          (recur @hiccup render)
 
           (vector? hiccup)
           (let [[tag & children] hiccup
                 c (first children)
                 attrs (and (map? c) (not (visualization c)) c)]
-            (cond (reagent? tag) (render-advice {:kind :kind/reagent :value hiccup})
-                  (scittle? tag) (render-advice {:kind :kind/scittle :form hiccup})
+            (cond (reagent? tag) (render {:kind :kind/reagent :value hiccup})
+                  (scittle? tag) (render {:kind :kind/scittle :value hiccup})
                   :else (if attrs
-                          (into [tag attrs] (map #(render-hiccup-recursively % render-advice)) (next children))
-                          (into [tag] (map #(render-hiccup-recursively % render-advice)) children))))
+                          (into [tag attrs] (map #(render-hiccup-recursively % render)) (next children))
+                          (into [tag] (map #(render-hiccup-recursively % render)) children))))
 
           :else
           hiccup)))
+
+(defn render-table-recursively
+  [value render]
+  (let [{:keys [column-names row-vectors]} value]
+    [:table
+     [:thead
+      (into [:tr]
+            (for [header column-names]
+              [:th (render {:value header})]))]
+     (into [:tbody]
+           (for [row row-vectors]
+             (into [:tr]
+                   (for [column row]
+                     [:td (render {:value column})]))))]))

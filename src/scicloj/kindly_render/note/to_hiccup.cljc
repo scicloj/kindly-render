@@ -1,15 +1,26 @@
 (ns scicloj.kindly-render.note.to-hiccup
   (:require [clojure.pprint :as pprint]
             [clojure.string :as str]
+            [scicloj.kindly.v4.api :as kindly]
             [scicloj.kindly-render.shared.walk :as walk]
             [scicloj.kindly-render.shared.util :as util]
             [scicloj.kindly-render.shared.from-markdown :as from-markdown]))
 
 (defmulti render-advice :kind)
 
+(defn kindly-style [hiccup {:as advice :keys [kind kindly/options]}]
+  {:pre [kind]}
+  (let [m (-> (select-keys options [:class :style])
+              (update :class #(str % (when (some? %) " ") (symbol kind))))
+        [tag attrs & more] hiccup]
+    (if (map? attrs)
+      (update hiccup 1 kindly/deep-merge m)
+      (into [tag m] more))))
+
 (defn render [note]
-  (-> (walk/derefing-advise note)
-      (render-advice)))
+  (let [advice (walk/derefing-advise note)
+        hiccup (render-advice advice)]
+    (kindly-style hiccup advice)))
 
 (defmethod render-advice :default [{:keys [value kind]}]
   (if kind
@@ -62,37 +73,27 @@
                         ""))}]))
 
 
-(defmethod render-advice :kind/table [{:keys [value]}]
-  (let [{:keys [column-names row-vectors]} value]
-    [:table
-     [:thead
-      (into [:tr]
-            (for [header column-names]
-              [:th (render-advice header)]))]
-     (into [:tbody]
-           (for [row row-vectors]
-             (into [:tr]
-                   (for [column row]
-                     [:td (render-advice column)]))))]))
-
 ;; Data types that can be recursive
 
 (defmethod render-advice :kind/vector [{:keys [value]}]
-  (walk/render-data-recursively {:class "kind_vector"} value render-advice))
+  (walk/render-data-recursively {:class "kind_vector"} value render))
 
 (defmethod render-advice :kind/map [{:keys [value]}]
-  (walk/render-data-recursively {:class "kind_map"} (apply concat value) render-advice))
+  (walk/render-data-recursively {:class "kind_map"} (apply concat value) render))
 
 (defmethod render-advice :kind/set [{:keys [value]}]
-  (walk/render-data-recursively {:class "kind_set"} value render-advice))
+  (walk/render-data-recursively {:class "kind_set"} value render))
 
 (defmethod render-advice :kind/seq [{:keys [value]}]
-  (walk/render-data-recursively {:class "kind_seq"} value render-advice))
+  (walk/render-data-recursively {:class "kind_seq"} value render))
 
 ;; Special data type hiccup that needs careful expansion
 
 (defmethod render-advice :kind/hiccup [{:keys [value]}]
-  (walk/render-hiccup-recursively value render-advice))
+  (walk/render-hiccup-recursively value render))
+
+(defmethod render-advice :kind/table [{:keys [value]}]
+  (walk/render-table-recursively value render))
 
 (defmethod render-advice :kind/video [{:keys [youtube-id
                                               iframe-width
