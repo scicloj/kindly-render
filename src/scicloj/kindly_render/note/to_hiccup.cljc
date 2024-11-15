@@ -8,10 +8,18 @@
 
 (defmulti render-advice :kind)
 
+(defn extend-class [c kind]
+  (if (= kind :kind/hiccup)
+    c
+    (str c
+         (when (some? c) " ")
+         (-> (str (symbol kind))
+             (str/replace "/" "-")))))
+
 (defn kindly-style [hiccup {:as advice :keys [kind kindly/options]}]
   {:pre [kind]}
   (let [m (-> (select-keys options [:class :style])
-              (update :class #(str % (when (some? %) " ") (symbol kind))))
+              (update :class extend-class kind))
         [tag attrs & more] hiccup]
     (if (map? attrs)
       (update hiccup 1 kindly/deep-merge m)
