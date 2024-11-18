@@ -9,12 +9,13 @@
 (defmulti render-advice :kind)
 
 (defn render [note]
-  (-> (walk/derefing-advise note)
-      (render-advice)))
+  (let [advice (walk/derefing-advise note)
+        hiccup (render-advice advice)]
+    (to-hiccup/kindly-style hiccup advice)))
 
 ;; fallback to regular hiccup
 (defmethod render-advice :default [note]
-  (to-hiccup/render note))
+  (to-hiccup/render-advice note))
 
 (def ^:dynamic *deps* (atom #{}))
 
@@ -99,7 +100,7 @@
   ;; unquoted forms may cause effects in Clojure and appear as a scittle script
   (let [forms (if (or (and (seq? form) (= 'quote (first form)))
                       (nil? form))
-                [value]
+                (if (vector? value) value [value])
                 (if (vector? form) form [form]))]
     (scittle forms)))
 
@@ -136,21 +137,24 @@
 ;; Data types that can be recursive
 
 (defmethod render-advice :kind/vector [{:keys [value]}]
-  (walk/render-data-recursively {:class "kind_vector"} value render-advice))
+  (walk/render-data-recursively {:class "kind_vector"} value render))
 
 (defmethod render-advice :kind/map [{:keys [value]}]
-  (walk/render-data-recursively {:class "kind_map"} (apply concat value) render-advice))
+  (walk/render-data-recursively {:class "kind_map"} (apply concat value) render))
 
 (defmethod render-advice :kind/set [{:keys [value]}]
-  (walk/render-data-recursively {:class "kind_set"} value render-advice))
+  (walk/render-data-recursively {:class "kind_set"} value render))
 
 (defmethod render-advice :kind/seq [{:keys [value]}]
-  (walk/render-data-recursively {:class "kind_seq"} value render-advice))
+  (walk/render-data-recursively {:class "kind_seq"} value render))
 
 ;; Special data type hiccup that needs careful expansion
 
 (defmethod render-advice :kind/hiccup [{:keys [value]}]
-  (walk/render-hiccup-recursively value render-advice))
+  (walk/render-hiccup-recursively value render))
+
+(defmethod render-advice :kind/table [{:keys [value]}]
+  (walk/render-table-recursively value render))
 
 (defmethod render-advice :kind/tex [{:keys [value]}]
   (deps :katex)
