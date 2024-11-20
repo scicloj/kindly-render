@@ -17,13 +17,15 @@
              (str/replace "/" "-")))))
 
 (defn kindly-style [hiccup {:as advice :keys [kind kindly/options]}]
-  {:pre [kind]}
-  (let [m (-> (select-keys options [:class :style])
-              (update :class extend-class kind))
-        [tag attrs & more] hiccup]
-    (if (map? attrs)
-      (update hiccup 1 kindly/deep-merge m)
-      (into [tag m] more))))
+  (if kind
+    (let [m (-> (select-keys options [:class :style])
+                (update :class extend-class kind))
+          [tag attrs & more] hiccup]
+      (if (map? attrs)
+        (update hiccup 1 kindly/deep-merge m)
+        (into [tag m] more)))
+    ;; else - no kind
+    hiccup))
 
 (defn render [note]
   (let [advice (walk/derefing-advise note)
