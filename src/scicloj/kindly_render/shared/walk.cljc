@@ -8,19 +8,15 @@
 (defn derefing-advise
   "Kind priority is inside out: kinds on the value supersedes kinds on the ref."
   [note]
-  (if (or (:form note)
-          (:value note))
-    (let [note (ka/advise note)
-          {:keys [value]} note]
-      (if (instance? clojure.lang.IDeref value)
-        (let [v @value
-              meta-kind (kc/meta-kind v)]
-          (-> (assoc note :value v)
-              (cond-> meta-kind (assoc note :meta-kind meta-kind))
-              (derefing-advise)))
-        note))
-    ;; else - neither form nor value - no need for advice
-    note))
+  (let [note (ka/advise note)
+        {:keys [value]} note]
+    (if (instance? clojure.lang.IDeref value)
+      (let [v @value
+            meta-kind (kc/meta-kind v)]
+        (-> (assoc note :value v)
+            (cond-> meta-kind (assoc note :meta-kind meta-kind))
+            (derefing-advise)))
+      note)))
 
 (defn render-data-recursively
   "Data kinds like vectors, maps, sets, and seqs are recursively rendered."
