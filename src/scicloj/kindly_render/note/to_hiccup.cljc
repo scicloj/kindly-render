@@ -17,7 +17,7 @@
              (str/replace "/" "-")))))
 
 (defn kindly-style [hiccup {:as advice :keys [kind kindly/options]}]
-  (if kind
+  (if (and kind (seq hiccup))
     (let [m (-> (select-keys options [:class :style])
                 (update :class extend-class kind))
           [tag attrs & more] hiccup]
