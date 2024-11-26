@@ -13,13 +13,12 @@
   (-> (walk/derefing-advise note)
       (render-advice)))
 
-(def ^:dynamic *gfm* false)
+(def ^:dynamic *js* true)
 
 (defn html [note]
-  ;; TODO: which hiccup to call depends...
-  (-> (if *gfm*
-        (to-hiccup/render note)
-        (to-hiccup-js/render note))
+  (-> (if *js*
+        (to-hiccup-js/render note)
+        (to-hiccup/render note))
       (hiccup/html)))
 
 
@@ -55,7 +54,7 @@
        (str/trim-newline s) \newline
        "```"))
 
-(defn block-quote [s]
+(defn blockquote [s]
   (->> (str/split-lines s)
        (map #(str "> " %))
        (str/join \newline)))
@@ -63,7 +62,10 @@
 (defn message [s channel]
   (-> (str "**" channel "**" \newline \newline
            (block s ""))
-      (block-quote)))
+      (blockquote)))
+
+(defn code-block [s]
+  (block s (if *js* "clojure {.sourceClojure}" "clojure")))
 
 ;; There are several potential ways to print values:
 ;; ```edn
@@ -74,9 +76,7 @@
 ;; <pre><code>...</code></pre>
 
 (defn result-block [value]
-  (block-quote (if *gfm*
-                 (block value "clojure")
-                 (block value "clojure {.printedClojure}"))))
+  (blockquote (block value (if *js* "clojure {.printedClojure}" "clojure"))))
 
 (defn result-pprint [value]
   (result-block (binding [*print-meta* true]
