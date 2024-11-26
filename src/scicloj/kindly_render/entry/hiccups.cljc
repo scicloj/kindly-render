@@ -7,14 +7,18 @@
 
 (defn code-and-value
   "Transforms a note into hiccup elements"
-  [{:as note :keys [code out err exception comment?]}]
+  [{:as note :keys [code comment?]}]
   (if comment?
     [(-> (comments/inline-markdown code)
          (from-markdown/to-hiccup))]
-    (let [{{:keys [hide-code hide-value]} :kindly/options} (walk/derefing-advise note)]
+    (let [note (walk/derefing-advise note)
+          {:keys [out err exception kindly/options]} note
+          {:keys [hide-code hide-value]} options
+          show-code (and code (not hide-code))
+          show-value (and (contains? note :value) (not hide-value))]
       (cond-> []
-              (and code (not hide-code)) (conj (to-hiccup/code-block code))
+              show-code (conj (to-hiccup/code-block code))
               out (conj (to-hiccup/message out "Stdout"))
               err (conj (to-hiccup/message err "Stderr"))
-              (and (not hide-value)) (conj (to-hiccup-js/render note))
+              show-value (conj (to-hiccup-js/render note))
               exception (conj (to-hiccup/message (ex-message exception) "Exception"))))))
