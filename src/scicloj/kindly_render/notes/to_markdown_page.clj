@@ -4,29 +4,8 @@
             [hiccup.core :as hiccup]
             [hiccup.page :as page]
             [scicloj.kindly-render.note.to-hiccup-js :as to-hiccup-js]
-            [scicloj.kindly-render.note.to-markdown :as to-markdown]))
-
-;; Markdown is sensitive to whitespace (especially newlines).
-;; fragments like blocks must be separated by a blank line.
-;; These markdown producing functions return strings with no trailing newline,
-;; which are combined with double newline.
-
-(defn join [a b]
-  (if (str/blank? a)
-    b
-    (str a \newline \newline b)))
-
-(defn render-note
-  "Transforms a note with advice into a markdown string"
-  [note]
-  (let [{:keys [code exception out err]} note]
-    (str/trim-newline
-      (cond-> ""
-              code (str (to-markdown/block code "clojure"))
-              out (join (to-markdown/message out "stdout"))
-              err (join (to-markdown/message err "stderr"))
-              (contains? note :value) (join (to-markdown/render note))
-              exception (join (to-markdown/message (ex-message exception) "exception"))))))
+            [scicloj.kindly-render.note.to-markdown :as to-markdown]
+            [scicloj.kindly-render.entry.markdowns :as markdowns]))
 
 ;; TODO: DRY and move to a css file
 (def styles
@@ -102,10 +81,10 @@
 
 (defn render-notebook
   "Creates a markdown file from a notebook"
-  [{:keys [notes gfm]}]
-  (binding [to-markdown/*gfm* gfm
+  [{:keys [notes js] :or {js true}}]
+  (binding [to-markdown/*js* js
             to-hiccup-js/*deps* (atom #{})]
     ;; rendering must happen before page-setup to gather dependencies (maybe not for a book though?)
-    (let [note-strs (mapv render-note notes)]
+    (let [note-strs (mapcat markdowns/code-and-value notes)]
       (str (page-setup notes) \newline \newline
            (str/join (str \newline \newline) note-strs) \newline))))

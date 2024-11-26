@@ -1,34 +1,7 @@
 (ns scicloj.kindly-render.notes.to-html-page
-  (:require [clojure.string :as str]
-            [hiccup.page :as page]
+  (:require [hiccup.page :as page]
             [scicloj.kindly-render.note.to-hiccup-js :as to-hiccup-js]
-            [scicloj.kindly-render.shared.from-markdown :as from-markdown]))
-
-(defn message [s channel]
-  [:blockquote
-   [:strong channel]
-   [:pre [:code s]]])
-
-(defn comment-hiccup [code]
-  (->> (str/split-lines code)
-       #! clojure comments can be shebang style, useful for babashka
-       (map #(str/replace-first % "#!" "    #!"))
-       ;; inline comments remove the semicolons
-       (map #(str/replace-first % #"^(;+)\s?" ""))
-       ;; keep titles separated in markdown
-       (map #(str/replace-first % #"^#" "\n#"))
-       (str/join \newline)
-       (from-markdown/to-hiccup)))
-
-(defn render-note-items [{:as note :keys [code out err exception comment?]}]
-  (cond-> []
-          (and code (not comment?)) (conj [:pre {:class "clojure"} [:code code]])
-          out (conj (message out "Stdout"))
-          err (conj (message err "Stderr"))
-          ;; TODO: should comment-hiccup be moved into render?
-          comment? (conj (comment-hiccup code))
-          (not comment?) (conj (to-hiccup-js/render note))
-          exception (conj (message (ex-message exception) "Exception"))))
+            [scicloj.kindly-render.entry.hiccups :as hiccups]))
 
 (defn page [elements]
   (page/html5
@@ -44,5 +17,5 @@
 (defn render-notebook
   "Creates a markdown file from a notebook"
   [{:keys [notes]}]
-  (-> (mapcat render-note-items notes)
+  (-> (mapcat hiccups/code-and-value notes)
       (page)))

@@ -39,6 +39,26 @@
      [:code (pr-str value)]]
     (str value)))
 
+(defn block [class xs]
+  ;; TODO: can the class go on pre instead? for more visibility in the dom
+  [:pre (into [:code {:class class} xs])])
+
+(defn code-block [xs]
+  (block "sourceCode language-clojure source-clojure bg-light" xs))
+
+(defn blockquote [xs]
+  (into [:blockquote] xs))
+
+(defn result-block [xs]
+  (blockquote [(block "sourceCode language-clojure printed-clojure" xs)]))
+
+(defn pprint-block [value]
+  (result-block [(binding [*print-meta* true]
+                   (with-out-str (pprint/pprint value)))]))
+
+(defn message [s channel]
+  (blockquote [[:strong channel] (block nil s)]))
+
 (defmethod render-advice :kind/code [{:keys [code]}]
   [:pre [:code code]])
 
@@ -54,8 +74,7 @@
   (util/kind-str value))
 
 (defmethod render-advice :kind/pprint [{:keys [value]}]
-  [:pre [:code (binding [*print-meta* true]
-                 (with-out-str (pprint/pprint value)))]])
+  (pprint-block value))
 
 (defmethod render-advice :kind/image [{:keys [value]}]
   (if (string? value)
