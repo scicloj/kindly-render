@@ -1,21 +1,18 @@
 (ns scicloj.kindly-render.notes.to-html-page
   (:require [hiccup.page :as page]
-            [scicloj.kindly-render.note.to-hiccup-js :as to-hiccup-js]
-            [scicloj.kindly-render.entry.hiccups :as hiccups]))
+            [scicloj.kindly-render.entry.hiccups :as hiccups]
+            [scicloj.kindly-render.notes.resources :as resources]
+            [scicloj.kindly-render.notes.to-hiccup-page :as to-hiccup-page]))
 
-(defn page [elements]
-  (page/html5
-    (cond->
-      [:head
-       (page/include-css "style.css")
-       (apply page/include-js (to-hiccup-js/include-js))]
-      (:scittle-reagent @to-hiccup-js/*deps*)
-      (conj (to-hiccup-js/scittle '[(require '[reagent.core :as r :refer [atom]]
-                                             '[reagent.dom :as dom])])))
-    (into [:body] elements)))
+;; TODO: this ns (and hiccup.page) do very little, maybe move them into page or something
+
+(defn page [notebook]
+  (-> (to-hiccup-page/page notebook)
+      (page/html5)))
 
 (defn render-notebook
-  "Creates a markdown file from a notebook"
-  [{:keys [notes]}]
-  (-> (mapcat hiccups/code-and-value notes)
+  "Given a prepared notebook, returns an HTML string page"
+  [notebook]
+  (-> (hiccups/with-hiccups notebook)
+      (resources/with-resource-hiccups)
       (page)))

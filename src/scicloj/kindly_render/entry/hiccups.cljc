@@ -1,6 +1,6 @@
 (ns scicloj.kindly-render.entry.hiccups
   (:require [scicloj.kindly-render.note.to-hiccup :as to-hiccup]
-            [scicloj.kindly-render.note.to-hiccup :as to-hiccup-js]
+            [scicloj.kindly-render.note.to-hiccup-js :as to-hiccup-js]
             [scicloj.kindly-render.entry.comments :as comments]
             [scicloj.kindly-render.shared.from-markdown :as from-markdown]
             [scicloj.kindly-render.shared.walk :as walk]))
@@ -20,5 +20,15 @@
               show-code (conj (to-hiccup/code-block code))
               out (conj (to-hiccup/message out "Stdout"))
               err (conj (to-hiccup/message err "Stderr"))
-              show-value (conj (to-hiccup-js/render note))
+              show-value (conj (if walk/*js*
+                                 (to-hiccup-js/render note)
+                                 (to-hiccup/render note)))
               exception (conj (to-hiccup/message (ex-message exception) "Exception"))))))
+
+(defn hiccups [{:as notebook :keys [js notes] :or {js true}}]
+  (binding [walk/*js* js
+            walk/*deps* (atom #{})]
+    (doall (mapcat code-and-value notes))))
+
+(defn with-hiccups [{:as notebook}]
+  (assoc notebook :hiccups (hiccups notebook)))

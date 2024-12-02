@@ -24,3 +24,11 @@
               err (conj (to-markdown/message err "stderr"))
               show-value (conj (to-markdown/render note))
               exception (conj (to-markdown/message (ex-message exception) "exception"))))))
+
+(defn markdowns [{:as notebook :keys [js notes] :or {js true}}]
+  (binding [walk/*js* js
+            walk/*deps* (atom #{})]
+    (doall (mapcat code-and-value notes))))
+
+(defn with-markdowns [notebook]
+  (assoc notebook :markdowns (markdowns notebook)))

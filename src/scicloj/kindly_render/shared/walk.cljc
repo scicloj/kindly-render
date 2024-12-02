@@ -4,8 +4,16 @@
             [scicloj.kindly-advice.v1.completion :as kc])
   (:import (clojure.lang IDeref)))
 
-;; TODO: this doesn't seem like the right place for this, maybe move to kindly-advice?
-(defn derefing-advise
+(def ^:dynamic *js*
+  "Use Javascript for visualizations"
+  true)
+
+(def ^:dynamic *deps*
+  "Remember what nested kinds were encountered"
+  (atom #{}))
+
+;; TODO: maybe move deref logic to kindly-advice?
+(defn derefing-advise*
   "Kind priority is inside out: kinds on the value supersedes kinds on the ref."
   [note]
   (let [note (ka/advise note)
@@ -15,8 +23,27 @@
             meta-kind (kc/meta-kind v)]
         (-> (assoc note :value v)
             (cond-> meta-kind (assoc note :meta-kind meta-kind))
-            (derefing-advise)))
+            (derefing-advise*)))
       note)))
+
+(defn note-deps
+  "Deps come from the kind, and possibly options"
+  [note]
+  (let [{:keys [kind kindly/options]} note
+        {:keys [deps]} options]
+    (cond-> #{}
+            kind (conj (keyword (name kind)))
+            (map? deps) (conj deps)
+            (sequential? deps) (into deps)
+            (keyword? deps) (conj deps))))
+
+(defn derefing-advise
+  "When we discover deps, record them for later use.
+  This is done mutably while traversing notes because deps may occur in nested kinds."
+  [note]
+  (doto (derefing-advise* note)
+    (some->> (note-deps)
+             (swap! *deps* into))))
 
 (defn render-data-recursively
   "Data kinds like vectors, maps, sets, and seqs are recursively rendered."

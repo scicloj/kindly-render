@@ -2,6 +2,7 @@
   (:require [scicloj.kindly-render.note.to-hiccup-js :as to-hiccup-js]
             [scicloj.kindly-render.notes.to-html-page :as html]))
 
+;; TODO: his is a different entry
 (defn expr-result [{:keys [code] :as note}]
   ;; TODO: maybe error/stdout to show
   (if (contains? note :value)
