@@ -14,6 +14,8 @@
    :datatables  {:deps #{:jquery}
                  :js   ["https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"]
                  :css  ["https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css"]}
+   :react       {:js ["https://unpkg.com/react@18/umd/react.production.min.js"
+                      "https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"]}
    #_#_:tmdjs {:js ["https://daslu.github.io/scittle/js/scittle.tmdjs.js"]}
    #_#_:emmy {:js ["https://daslu.github.io/scittle/js/scittle.emmy.js"]}
    #_#_:mathbox {:js ["https://daslu.github.io/scittle/js/scittle.mathbox.js"]}
@@ -44,16 +46,16 @@
                         ;; which would need a bit more care
                         ;; (see https://katex.org/docs/font.html)
                         :css ["https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css"]}
-         :reagent      {:deps    #{:kind/scittle}
-                        :js      ["https://unpkg.com/react@18/umd/react.production.min.js"
-                                  "https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"
-                                  "https://daslu.github.io/scittle/js/scittle.reagent.js"]
+         :reagent      {:deps    #{:kind/scittle :react}
                         :scittle ['(require '[reagent.core :as r :refer [atom]]
                                             '[reagent.dom :as dom])]}
+         ;; TODO: can we manage scittle in a better way, with versioning, or contribute upstream?
          ;; optional plugins require a custom build of scittle
-         ;; TODO: can we manage this in a better way, with versioning, or contribute upstream?
-         :scittle      {:js ["https://daslu.github.io/scittle/js/scittle.js"
-                             "https://daslu.github.io/scittle/js/scittle.cljs-ajax.js"]}
+         ;; this build of scittle depends on react, which should not be the case
+         :scittle      {:deps #{:react}
+                        :js   ["https://daslu.github.io/scittle/js/scittle.js"
+                               "https://daslu.github.io/scittle/js/scittle.cljs-ajax.js"
+                               "https://daslu.github.io/scittle/js/scittle.reagent.js"]}
          :emmy-viewers {:deps #{:kind/scittle}
                         :js   ["https://daslu.github.io/scittle/js/scittle.emmy.js"
                                "https://daslu.github.io/scittle/js/scittle.emmy-viewers.js"]
