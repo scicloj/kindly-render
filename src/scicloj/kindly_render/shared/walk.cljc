@@ -26,24 +26,30 @@
             (derefing-advise*)))
       note)))
 
+(defn optional-deps
+  "Finds all deps from kindly/options"
+  [{:keys [kindly/options]}]
+  (let [{:keys [deps]} options]
+    (cond (map? deps) #{deps}
+          (sequential? deps) (set deps)
+          (keyword? deps) #{deps})))
+
 (defn note-deps
   "Deps come from the kind, and possibly options"
-  [note]
-  (let [{:keys [kind kindly/options]} note
-        {:keys [deps]} options]
-    (cond-> #{}
-            kind (conj (keyword (name kind)))
-            (map? deps) (conj deps)
-            (sequential? deps) (into deps)
-            (keyword? deps) (conj deps))))
+  [{:as note :keys [kind]}]
+  (let [odeps (optional-deps note)
+        deps (cond-> #{}
+                     kind (conj kind)
+                     odeps (into odeps))]
+    (swap! *deps* into deps)
+    (assoc note :deps deps)))
 
-(defn derefing-advise
+(defn advise-deps
   "When we discover deps, record them for later use.
   This is done mutably while traversing notes because deps may occur in nested kinds."
   [note]
-  (doto (derefing-advise* note)
-    (some->> (note-deps)
-             (swap! *deps* into))))
+  (-> (derefing-advise* note)
+      (note-deps)))
 
 (defn render-data-recursively
   "Data kinds like vectors, maps, sets, and seqs are recursively rendered."
@@ -73,7 +79,7 @@
   as they are already hiccup.
   Returns a note suitable for rendering."
   [x]
-  (let [note (derefing-advise {:value x})
+  (let [note (advise-deps {:value x})
         {:keys [meta-kind]} note]
     ;; meta-kind is explicitly annotated, excludes vector/set/map/seq
     (when (or (and meta-kind (not= :kind/hiccup meta-kind))

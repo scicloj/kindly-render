@@ -9,7 +9,7 @@
 (defmulti render-advice :kind)
 
 (defn render [note]
-  (let [advice (walk/derefing-advise note)
+  (let [advice (walk/advise-deps note)
         hiccup (render-advice advice)]
     (to-hiccup/kindly-style hiccup advice)))
 

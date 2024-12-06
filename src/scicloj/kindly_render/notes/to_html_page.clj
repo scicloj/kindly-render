@@ -4,8 +4,6 @@
             [scicloj.kindly-render.notes.resources :as resources]
             [scicloj.kindly-render.notes.to-hiccup-page :as to-hiccup-page]))
 
-;; TODO: this ns (and hiccup.page) do very little, maybe move them into page or something
-
 (defn page [notebook]
   (-> (to-hiccup-page/page notebook)
       (page/html5)))

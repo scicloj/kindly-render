@@ -5,7 +5,7 @@
 (defmulti render-advice :kind)
 
 (defn render [note]
-  (-> (walk/derefing-advise note)
+  (-> (walk/advise-deps note)
       (render-advice)))
 
 ;; fallback to hiccup-js

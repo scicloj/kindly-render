@@ -11,7 +11,7 @@
   (if comment?
     [(-> (comments/inline-markdown code)
          (from-markdown/to-hiccup))]
-    (let [note (walk/derefing-advise note)
+    (let [note (walk/advise-deps note)
           {:keys [out err exception kindly/options]} note
           {:keys [hide-code hide-value]} options
           show-code (and code (not hide-code))
@@ -25,10 +25,8 @@
                                  (to-hiccup/render note)))
               exception (conj (to-hiccup/message (ex-message exception) "Exception"))))))
 
-(defn hiccups [{:as notebook :keys [js notes] :or {js true}}]
+(defn with-hiccups [{:as notebook :keys [js notes] :or {js true}}]
   (binding [walk/*js* js
             walk/*deps* (atom #{})]
-    (doall (mapcat code-and-value notes))))
-
-(defn with-hiccups [{:as notebook}]
-  (assoc notebook :hiccups (hiccups notebook)))
+    (assoc notebook :hiccups (doall (mapcat code-and-value notes))
+                    :deps (into @walk/*deps* (walk/optional-deps notebook)))))
