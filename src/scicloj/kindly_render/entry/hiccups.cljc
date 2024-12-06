@@ -25,7 +25,11 @@
                                  (to-hiccup/render note)))
               exception (conj (to-hiccup/message (ex-message exception) "Exception"))))))
 
-(defn with-hiccups [{:as notebook :keys [js notes] :or {js true}}]
+(defn with-hiccups
+  "Adds `:hiccups` and `:deps` to a notebook.
+  `:hiccups` represent the note code and visualization.
+  `:deps` indicate that resources are required to produce the visualizations."
+  [{:as notebook :keys [js notes] :or {js true}}]
   (binding [walk/*js* js
             walk/*deps* (atom #{})]
     (assoc notebook :hiccups (doall (mapcat code-and-value notes))

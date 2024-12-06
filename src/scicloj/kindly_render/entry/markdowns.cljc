@@ -26,6 +26,9 @@
               exception (conj (to-markdown/message (ex-message exception) "exception"))))))
 
 (defn with-markdowns [{:as notebook :keys [js notes] :or {js true}}]
+  "Adds `:markdowns` and `:deps` to a notebook.
+  `:markdowns` represent the note code and visualization.
+  `:deps` indicate that resources are required to produce the visualizations."
   (binding [walk/*js* js
             walk/*deps* (atom #{})]
     (assoc notebook :markdowns (doall (mapcat code-and-value notes))

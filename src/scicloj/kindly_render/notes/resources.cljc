@@ -39,9 +39,9 @@
         :else-embed [:script {:type "text/javascript"} (slurp-resource src)]))
 
 (defmethod resource-hiccup :css
-  [{:keys [href package async] :or {async true}}]
-  (cond (not package) [:link {:type "text/css" :rel "stylesheet" :async async :href href}]
-        (string? package) [:link {:type "text/css" :rel "stylesheet" :async async :href (relative href package)}]
+  [{:keys [href package]}]
+  (cond (not package) [:link {:type "text/css" :rel "stylesheet" :href href}]
+        (string? package) [:link {:type "text/css" :rel "stylesheet" :href (relative href package)}]
         :else-embed [:link {:type "text/css" :rel "stylesheet"} (slurp-resource href)]))
 
 (defmethod resource-hiccup :scittle
