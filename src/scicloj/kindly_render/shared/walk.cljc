@@ -13,7 +13,7 @@
   (atom #{}))
 
 ;; TODO: maybe move deref logic to kindly-advice?
-(defn derefing-advise*
+(defn derefing-advise
   "Kind priority is inside out: kinds on the value supersedes kinds on the ref."
   [note]
   (let [note (ka/advise note)
@@ -23,7 +23,7 @@
             meta-kind (kc/meta-kind v)]
         (-> (assoc note :value v)
             (cond-> meta-kind (assoc note :meta-kind meta-kind))
-            (derefing-advise*)))
+            (derefing-advise)))
       note)))
 
 (defn optional-deps
@@ -48,7 +48,7 @@
   "When we discover deps, record them for later use.
   This is done mutably while traversing notes because deps may occur in nested kinds."
   [note]
-  (-> (derefing-advise* note)
+  (-> (derefing-advise note)
       (note-deps)))
 
 (defn render-data-recursively

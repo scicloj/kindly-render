@@ -130,7 +130,6 @@ cytoscape(value);
 };"
                     (util/json-str value))]])
 
-;; TODO: standardize json writing
 (defmethod render-advice :kind/echarts [{:keys [value]
                                          :as   note}]
   [:div {:style (extract-style note)}
