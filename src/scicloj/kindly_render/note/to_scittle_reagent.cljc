@@ -5,7 +5,7 @@
 (defmulti render-advice :kind)
 
 (defn render [note]
-  (-> (walk/derefing-advise note)
+  (-> (walk/advise-deps note)
       (render-advice)))
 
 ;; fallback to hiccup-js
@@ -15,16 +15,16 @@
 ;; Data types that can be recursive
 
 (defmethod render-advice :kind/vector [{:keys [value]}]
-  (walk/render-data-recursively {:class "kind_vector"} value render-advice))
+  (walk/render-data-recursively {:class "kind-vector"} value render-advice))
 
 (defmethod render-advice :kind/map [{:keys [value]}]
-  (walk/render-data-recursively {:class "kind_map"} (apply concat value) render-advice))
+  (walk/render-data-recursively {:class "kind-map"} (apply concat value) render-advice))
 
 (defmethod render-advice :kind/set [{:keys [value]}]
-  (walk/render-data-recursively {:class "kind_set"} value render-advice))
+  (walk/render-data-recursively {:class "kind-set"} value render-advice))
 
 (defmethod render-advice :kind/seq [{:keys [value]}]
-  (walk/render-data-recursively {:class "kind_seq"} value render-advice))
+  (walk/render-data-recursively {:class "kind-seq"} value render-advice))
 
 ;; Special data type hiccup that needs careful expansion
 

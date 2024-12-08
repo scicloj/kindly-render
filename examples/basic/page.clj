@@ -8,13 +8,12 @@
   (kind/echarts {:title   {:text "Echarts Example"}
                  :tooltip {}
                  :legend  {:data ["sales"]}
-                 :xAxis   {:data ["Shirts", "Cardigans", "Chiffons",
-                                  "Pants", "Heels", "Socks"]}
+                 :xAxis   {:data ["Shirts", "Cardigans", "Chiffons", "Pants", "Heels", "Socks"]}
                  :yAxis   {}
                  :series  [{:name "sales"
                             :type "bar"
-                            :data [5 20 36
-                                   10 10 20]}]}))
+                            :data [5 20 36 10 10 20]}]}
+                {:style {:height "200px"}}))
 
 (def hiccup-list
   (kind/hiccup

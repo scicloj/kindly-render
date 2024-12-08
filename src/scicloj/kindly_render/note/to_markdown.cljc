@@ -10,13 +10,11 @@
 (defmulti render-advice :kind)
 
 (defn render [note]
-  (-> (walk/derefing-advise note)
+  (-> (walk/advise-deps note)
       (render-advice)))
 
-(def ^:dynamic *js* true)
-
 (defn html [note]
-  (-> (if *js*
+  (-> (if walk/*js*
         (to-hiccup-js/render note)
         (to-hiccup/render note))
       (hiccup/html)))
@@ -65,7 +63,9 @@
       (blockquote)))
 
 (defn code-block [s]
-  (block s (if *js* "clojure {.sourceClojure}" "clojure")))
+  (block s (if walk/*js*
+             "clojure {.sourceClojure}"
+             "clojure")))
 
 ;; There are several potential ways to print values:
 ;; ```edn
@@ -76,7 +76,9 @@
 ;; <pre><code>...</code></pre>
 
 (defn result-block [value]
-  (blockquote (block value (if *js* "clojure {.printedClojure}" "clojure"))))
+  (blockquote (block value (if walk/*js*
+                             "clojure {.printedClojure}"
+                             "clojure"))))
 
 (defn result-pprint [value]
   (result-block (binding [*print-meta* true]

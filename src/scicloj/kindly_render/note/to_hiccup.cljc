@@ -8,19 +8,25 @@
 
 (defmulti render-advice :kind)
 
-(defn extend-class [c kind]
-  (if (= kind :kind/hiccup)
-    c
-    (str c
-         (when (some? c) " ")
-         (-> (str (symbol kind))
-             (str/replace "/" "-")))))
+(defn kind-class [kind]
+  (when (not= kind :kind/hiccup)
+    (-> (str (symbol kind))
+        (str/replace "/" "-"))))
+
+(defn join-classes [classes]
+  (some->> (remove nil? classes)
+           (seq)
+           (str/join " ")))
 
 (defn kindly-style [hiccup {:as advice :keys [kind kindly/options]}]
   (if (and kind (seq hiccup))
-    (let [m (-> (select-keys options [:class :style])
-                (update :class extend-class kind))
-          [tag attrs & more] hiccup]
+    (let [[tag attrs & more] hiccup
+          class (join-classes [(kind-class kind)
+                               (:class options)
+                               (when (map? attrs)
+                                 (:class attrs))])
+          m (cond-> (select-keys options [:style])
+                    (not (str/blank? class)) (assoc :class class))]
       (if (map? attrs)
         (update hiccup 1 kindly/deep-merge m)
         (into [tag m] more)))
@@ -28,7 +34,7 @@
     hiccup))
 
 (defn render [note]
-  (let [advice (walk/derefing-advise note)
+  (let [advice (walk/advise-deps note)
         hiccup (render-advice advice)]
     (kindly-style hiccup advice)))
 
@@ -105,16 +111,16 @@
 ;; Data types that can be recursive
 
 (defmethod render-advice :kind/vector [{:keys [value]}]
-  (walk/render-data-recursively {:class "kind_vector"} value render))
+  (walk/render-data-recursively {:class "kind-vector"} value render))
 
 (defmethod render-advice :kind/map [{:keys [value]}]
-  (walk/render-data-recursively {:class "kind_map"} (apply concat value) render))
+  (walk/render-data-recursively {:class "kind-map"} (apply concat value) render))
 
 (defmethod render-advice :kind/set [{:keys [value]}]
-  (walk/render-data-recursively {:class "kind_set"} value render))
+  (walk/render-data-recursively {:class "kind-set"} value render))
 
 (defmethod render-advice :kind/seq [{:keys [value]}]
-  (walk/render-data-recursively {:class "kind_seq"} value render))
+  (walk/render-data-recursively {:class "kind-seq"} value render))
 
 ;; Special data type hiccup that needs careful expansion
 

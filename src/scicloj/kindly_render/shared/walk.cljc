@@ -4,7 +4,15 @@
             [scicloj.kindly-advice.v1.completion :as kc])
   (:import (clojure.lang IDeref)))
 
-;; TODO: this doesn't seem like the right place for this, maybe move to kindly-advice?
+(def ^:dynamic *js*
+  "Use Javascript for visualizations"
+  true)
+
+(def ^:dynamic *deps*
+  "Remember what nested kinds were encountered"
+  (atom #{}))
+
+;; TODO: maybe move deref logic to kindly-advice?
 (defn derefing-advise
   "Kind priority is inside out: kinds on the value supersedes kinds on the ref."
   [note]
@@ -17,6 +25,31 @@
             (cond-> meta-kind (assoc note :meta-kind meta-kind))
             (derefing-advise)))
       note)))
+
+(defn optional-deps
+  "Finds all deps from kindly/options"
+  [{:keys [kindly/options]}]
+  (let [{:keys [deps]} options]
+    (cond (map? deps) #{deps}
+          (sequential? deps) (set deps)
+          (keyword? deps) #{deps})))
+
+(defn note-deps
+  "Deps come from the kind, and possibly options"
+  [{:as note :keys [kind]}]
+  (let [odeps (optional-deps note)
+        deps (cond-> #{}
+                     kind (conj kind)
+                     odeps (into odeps))]
+    (swap! *deps* into deps)
+    (assoc note :deps deps)))
+
+(defn advise-deps
+  "When we discover deps, record them for later use.
+  This is done mutably while traversing notes because deps may occur in nested kinds."
+  [note]
+  (-> (derefing-advise note)
+      (note-deps)))
 
 (defn render-data-recursively
   "Data kinds like vectors, maps, sets, and seqs are recursively rendered."
@@ -46,7 +79,7 @@
   as they are already hiccup.
   Returns a note suitable for rendering."
   [x]
-  (let [note (derefing-advise {:value x})
+  (let [note (advise-deps {:value x})
         {:keys [meta-kind]} note]
     ;; meta-kind is explicitly annotated, excludes vector/set/map/seq
     (when (or (and meta-kind (not= :kind/hiccup meta-kind))

@@ -13,7 +13,7 @@
   [{:as note :keys [code comment?]}]
   (if comment?
     [(comments/inline-markdown code)]
-    (let [note (walk/derefing-advise note)
+    (let [note (walk/advise-deps note)
           {:keys [out err exception kindly/options]} note
           {:keys [hide-code hide-value]} options
           show-code (and code (not hide-code))
@@ -24,3 +24,12 @@
               err (conj (to-markdown/message err "stderr"))
               show-value (conj (to-markdown/render note))
               exception (conj (to-markdown/message (ex-message exception) "exception"))))))
+
+(defn with-markdowns [{:as notebook :keys [js notes] :or {js true}}]
+  "Adds `:markdowns` and `:deps` to a notebook.
+  `:markdowns` represent the note code and visualization.
+  `:deps` indicate that resources are required to produce the visualizations."
+  (binding [walk/*js* js
+            walk/*deps* (atom #{})]
+    (assoc notebook :markdowns (doall (mapcat code-and-value notes))
+                    :deps (into @walk/*deps* (walk/optional-deps notebook)))))
