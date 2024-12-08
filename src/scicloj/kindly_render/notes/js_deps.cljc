@@ -107,8 +107,8 @@
                       {:id  ::invalid-dep
                        :dep dep})))))
 
-(defn collect-deps [depms]
-  (reduce into #{} (keep :deps depms)))
+(defn collect-deps [depmaps]
+  (reduce into #{} (keep :deps depmaps)))
 
 (defn resolve-deps-tree
   "Accepts a sequence of deps (could be keywords or maps).
@@ -116,12 +116,12 @@
   This is a topological sort.
   Returns a sequence of maps."
   [deps options]
-  (when-let [depms (seq (keep #(resolve-dep % options) deps))]
-    (-> (resolve-deps-tree (collect-deps depms) options)
-        (concat depms)
+  (when-let [depmaps (seq (keep #(resolve-dep % options) deps))]
+    (-> (resolve-deps-tree (collect-deps depmaps) options)
+        (concat depmaps)
         (distinct))))
 
-(defn notebook-depms
+(defn notebook-depmaps
   "Returns a sequence of dep maps shaped like `{:js [...] :css [...] :scittle [...]}` ordered by dependency.
   Deps may come from kindly/options of the notebook, kinds of the notes, and kindly/options of notes.
   Properties :package, :placement, and :async may be applied to a dep map, or an individual dep.

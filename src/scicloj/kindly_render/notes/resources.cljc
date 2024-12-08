@@ -95,7 +95,7 @@
   Options may be overwritten per dep map, or per dep."
   [{:as notebook :keys [kindly/options]}]
   (let [props (select-keys options [:placement :package :async])
-        depms (js-deps/notebook-depms notebook)
-        resources (-> (mapcat #(deps-resources % props) depms)
+        depmaps (js-deps/notebook-depmaps notebook)
+        resources (-> (mapcat #(deps-resources % props) depmaps)
                       (distinct))]
     (assoc notebook :resource-hiccups (resource-hiccups resources))))
