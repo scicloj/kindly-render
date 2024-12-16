@@ -80,14 +80,13 @@
   "Returns a map of resources organized placement (head or body)"
   [resources]
   (group-by (fn get-placement [resource]
-              (or (:placement resource)
-                  :head))
+              (or (:placement resource) :head))
             resources))
 
 (defn resource-hiccups
   [resources]
   (-> (resources-by-placement resources)
-      (update-vals #(doall (map resource-hiccup %)))))
+      (update-vals #(map resource-hiccup %))))
 
 (defn with-resource-hiccups
   "Adds hiccups organized by placement (:head or :body) for resource dependencies.

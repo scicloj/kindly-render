@@ -1,14 +1,37 @@
 (ns scicloj.kindly-render.notes.js-deps
-  (:require [scicloj.kindly.v4.api :as kindly]))
+  (:require [scicloj.kindly.v4.api :as kindly]
+            [scicloj.kindly-render.shared.walk :as walk]))
 
 ;; TODO: hiccup without js may still require CSS (likely different CSS if so)
 ;; ... in which case we'd need to make a different set of dependencies.
 
 ;; TODO: kindly.css - should it be mandatory or not? if so it should be on CDN somewhere.
 
+
+;; TODO: use gh-pages published location
+;; should these be folded into kindly.css?
+(def clay-root "https://raw.githubusercontent.com/scicloj/clay/refs/heads/main/resources/")
+(def clay-css ["bootstrap-generated-by-quarto.min.css"
+               "bootstrap-toc-customization.css"
+               "bootswatch-cosmo-bootstrap.min.css"
+               "bootswatch-spacelab-bootstrap-adapted-bg-light.min.css"
+               "bootswatch-spacelab-bootstrap.min.css"
+               "code.css"
+               "loader.css"
+               "main.css"
+               "md-main.css"
+               "table.css"])
+(def clay-resources
+  {:css (vec (for [css clay-css]
+               (str clay-root css)))})
+
 (def js-deps
   "Resources that do not correspond to a kind, but are useful on their own"
-  {:d3          {:js ["https://cdn.jsdelivr.net/npm/d3@7"
+  ;; TODO: host kindly css in gh-pages
+  {:kindly      {:css ["https://raw.githubusercontent.com/scicloj/kindly-render/refs/heads/main/resources/kindly.css"]}
+   :clay        clay-resources
+   :bootstrap   {:css ["https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"]}
+   :d3          {:js ["https://cdn.jsdelivr.net/npm/d3@7"
                       "https://cdn.jsdelivr.net/npm/d3-require@1"]}
    ;; TODO: make sure this gets brought in for kind/table with datatable options
    :datatables  {:deps #{:jquery}
@@ -107,7 +130,9 @@
                       {:id  ::invalid-dep
                        :dep dep})))))
 
-(defn collect-deps [depmaps]
+(defn deps-of-depmaps
+  "Collects the deps of deps"
+  [depmaps]
   (reduce into #{} (keep :deps depmaps)))
 
 (defn resolve-deps-tree
@@ -117,7 +142,7 @@
   Returns a sequence of maps."
   [deps options]
   (when-let [depmaps (seq (keep #(resolve-dep % options) deps))]
-    (-> (resolve-deps-tree (collect-deps depmaps) options)
+    (-> (resolve-deps-tree (deps-of-depmaps depmaps) options)
         (concat depmaps)
         (distinct))))
 
@@ -128,5 +153,7 @@
   If `package` is a string, it is a relative root path.
   If `package` is `:embed`, fills the script content directly.
   `placement` can be `:head` or `:body` which is where in the document it will be appended."
-  [{:as notebook :keys [kindly/options deps]}]
-  (resolve-deps-tree deps options))
+  [{:as notebook :keys [kindly/options notes]}]
+  (let [deps (walk/union-into (walk/optional-deps notebook)
+                              (keep :deps notes))]
+    (resolve-deps-tree deps options)))

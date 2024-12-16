@@ -10,28 +10,28 @@
 (defmulti render-advice :kind)
 
 (defn render [note]
-  (-> (walk/advise-deps note)
-      (render-advice)))
+  (walk/advise-render-style note render-advice))
 
 (defn html [note]
-  (-> (if walk/*js*
+  (-> (if (walk/js? note)
         (to-hiccup-js/render note)
         (to-hiccup/render note))
+      (walk/kindly-style)
+      (:hiccup)
       (hiccup/html)))
-
 
 ;; fallback to hiccup
 ;; datastructures and hiccup are left to hiccup for consistency
 (defmethod render-advice :default [note]
-  (html note))
+  (->> (html note)
+       (assoc note :md)))
 
-(defmethod render-advice :kind/hidden [note])
+(defmethod render-advice :kind/hidden [note]
+  note)
 
-(defmethod render-advice :kind/code [{:keys [code]}]
-  code)
-
-(defmethod render-advice :kind/md [{:keys [value]}]
-  (util/kind-str value))
+(defmethod render-advice :kind/md [{:as note :keys [value]}]
+  (->> (util/kind-str value)
+       (assoc note :md)))
 
 (defn divide [xs]
   (str "| "
@@ -39,13 +39,14 @@
        (str/join " | " (map #(html {:value %}) xs))
        " |"))
 
-(defmethod render-advice :kind/table [{:keys [value]}]
-  (let [{:keys [column-names row-vectors]} value]
-    (str (divide column-names) \newline
-         (divide (repeat (count column-names) "----")) \newline
-         (str/join \newline
-                   (for [row row-vectors]
-                     (divide row))))))
+(defmethod render-advice :kind/table [{:as note :keys [value]}]
+  (->> (let [{:keys [column-names row-vectors]} value]
+         (str (divide column-names) \newline
+              (divide (repeat (count column-names) "----")) \newline
+              (str/join \newline
+                        (for [row row-vectors]
+                          (divide row)))))
+       (assoc note :md)))
 
 (defn block [s language]
   (str "```" language \newline
@@ -62,10 +63,14 @@
            (block s ""))
       (blockquote)))
 
-(defn code-block [s]
-  (block s (if walk/*js*
+(defn code-block [s js]
+  (block s (if js
              "clojure {.sourceClojure}"
              "clojure")))
+
+(defmethod render-advice :kind/code [{:as note :keys [code]}]
+  (->> (code-block code (walk/js? note))
+       (assoc note :md)))
 
 ;; There are several potential ways to print values:
 ;; ```edn
@@ -75,39 +80,44 @@
 ;; >```clojure
 ;; <pre><code>...</code></pre>
 
-(defn result-block [value]
-  (blockquote (block value (if walk/*js*
+(defn result-block [value js]
+  (blockquote (block value (if js
                              "clojure {.printedClojure}"
                              "clojure"))))
 
-(defn result-pprint [value]
+(defn result-pprint [value js]
   (result-block (binding [*print-meta* true]
-                  (with-out-str (pprint/pprint value)))))
+                  (with-out-str (pprint/pprint value)))
+                js))
 
-(defmethod render-advice :kind/pprint [{:keys [value]}]
-  (result-pprint value))
+(defmethod render-advice :kind/code [{:as note :keys [code language]}]
+  (->> (block language code)
+       (assoc note :md)))
 
-;; Don't show vars
-(defmethod render-advice :kind/var [note])
+(defmethod render-advice :kind/pprint [{:as note :keys [value]}]
+  (->> (result-pprint value (walk/js? note))
+       (assoc note :md)))
 
-(defmethod render-advice :kind/observable [{:keys [value]}]
-  (format "
+(defmethod render-advice :kind/observable [{:as note :keys [value]}]
+  (->> (format "
 ```{ojs}
 //| echo: false
 %s
 ```"
-          (util/kind-str value)))
+               (util/kind-str value))
+       (assoc note :md)))
 
 #?(:clj
-   (defmethod render-advice :kind/dataset [{:keys [value kindly/options]}]
+   (defmethod render-advice :kind/dataset [{:as note :keys [value kindly/options]}]
      (let [{:keys [dataset/print-range]} options]
        (-> value
-           (cond-> print-range
-                   ((resolve 'tech.v3.dataset.print/print-range) print-range))
+           (cond-> print-range ((resolve 'tech.v3.dataset.print/print-range) print-range))
            (println)
-           (with-out-str)))))
+           (with-out-str)
+           (->> (assoc note :md))))))
 
-(defmethod render-advice :kind/tex [{:keys [value]}]
+(defmethod render-advice :kind/tex [{:as note :keys [value]}]
   (->> (if (vector? value) value [value])
        (map (partial format "$$%s$$"))
-       (str/join \newline)))
+       (str/join \newline)
+       (assoc note :md)))
