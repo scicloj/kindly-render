@@ -1,16 +1,19 @@
 (ns scicloj.kindly-render.shared.walk
   "Walks nested visualizations, rendering them to hiccup"
-  (:require [scicloj.kindly-advice.v1.api :as ka]
+  (:require [clojure.string :as str]
+            [scicloj.kindly.v4.api :as kindly]
+            [scicloj.kindly-advice.v1.api :as ka]
             [scicloj.kindly-advice.v1.completion :as kc])
   (:import (clojure.lang IDeref)))
 
-(def ^:dynamic *js*
-  "Use Javascript for visualizations"
-  true)
+(defn show?
+  "note must have been advised to determine if it should be shown"
+  [note]
+  (and (contains? note :value)
+       (not (get-in note [:kindly/options :hide-value]))))
 
-(def ^:dynamic *deps*
-  "Remember what nested kinds were encountered"
-  (atom #{}))
+(defn js? [{:keys [kindly/options]}]
+  (:js options true))
 
 ;; TODO: maybe move deref logic to kindly-advice?
 (defn derefing-advise
@@ -18,7 +21,7 @@
   [note]
   (let [note (ka/advise note)
         {:keys [value]} note]
-    (if (instance? clojure.lang.IDeref value)
+    (if (instance? IDeref value)
       (let [v @value
             meta-kind (kc/meta-kind v)]
         (-> (assoc note :value v)
@@ -27,38 +30,50 @@
       note)))
 
 (defn optional-deps
-  "Finds all deps from kindly/options"
+  "Finds deps from kindly/options"
   [{:keys [kindly/options]}]
   (let [{:keys [deps]} options]
-    (cond (map? deps) #{deps}
+    (cond (set? deps) deps
+          (map? deps) #{deps}
           (sequential? deps) (set deps)
           (keyword? deps) #{deps})))
+
+(defn unions
+  "Like set/union, but handles sequences or sets"
+  [& xs]
+  (reduce into #{} xs))
+
+(defn union-into
+  "Like unions, but extra arguments are sequences of sets or sequences to put into the first"
+  [x & xs]
+  (apply unions x (apply concat xs)))
 
 (defn note-deps
   "Deps come from the kind, and possibly options"
   [{:as note :keys [kind]}]
-  (let [odeps (optional-deps note)
-        deps (cond-> #{}
-                     kind (conj kind)
-                     odeps (into odeps))]
-    (swap! *deps* into deps)
-    (assoc note :deps deps)))
+  (update note :deps unions
+          (when kind #{kind})
+          (optional-deps note)))
 
-(defn advise-deps
-  "When we discover deps, record them for later use.
-  This is done mutably while traversing notes because deps may occur in nested kinds."
+(defn advise-with-deps
+  "Updates advice and deps of a note"
   [note]
   (-> (derefing-advise note)
       (note-deps)))
 
 (defn render-data-recursively
-  "Data kinds like vectors, maps, sets, and seqs are recursively rendered."
-  [props vs render]
-  (into [:div props]
-        (for [v vs]
-          [:div {:style {:border  "1px solid grey"
-                         :padding "2px"}}
-           (render {:value v})])))
+  "Data kinds like vectors, maps, sets, and seqs are recursively rendered.
+  There may be nested kinds to render, and possibly deps discovered."
+  [note props vs render]
+  (let [notes (for [v vs]
+                (render {:value v}))]
+    (-> note
+        (update :deps union-into (keep :deps notes))
+        (assoc :hiccup (into [:div props]
+                             (for [{:keys [hiccup]} notes]
+                               [:div {:style {:border  "1px solid grey"
+                                              :padding "2px"}}
+                                hiccup]))))))
 
 (defn reagent?
   "Reagent components may be requested by symbol: `[my-component 1]`
@@ -72,59 +87,131 @@
   [tag]
   (seq? tag))
 
-(defn visualization
-  "Identifies values that have kind annotations,
-  indicating they are visualizations.
-  Hiccup and tagged vectors are not considered visualizations
-  as they are already hiccup.
-  Returns a note suitable for rendering."
+(defn attrs?
+  "Detect a plain map to be used as attrs, not a visualization"
   [x]
-  (let [note (advise-deps {:value x})
-        {:keys [meta-kind]} note]
-    ;; meta-kind is explicitly annotated, excludes vector/set/map/seq
-    (when (or (and meta-kind (not= :kind/hiccup meta-kind))
-              ;; vectors can be visualizations, if not valid hiccup
-              (and (vector? x)
-                   (let [tag (first x)]
-                     (not (or (keyword? tag)
-                              (reagent? tag)
-                              (scittle? tag))))))
-      note)))
+  (and (map? x)
+       (let [{:keys [meta-kind kind]} (ka/advise {:value x})]
+         (and (= kind :kind/map)
+              ;; meta kinds were explicitly annotated for visualization
+              (not meta-kind)))))
 
 (defn render-hiccup-recursively
   "Traverses a hiccup tree, and returns a hiccup tree.
   Kinds encountered get rendered to hiccup,
   making a larger hiccup structure that can be converted to HTML.
   Data kinds like vectors, maps, sets, and seqs are recursively rendered."
-  [hiccup render]
-  (if-let [note (visualization hiccup)]
+  [{:as note :keys [kind value]} render]
+  (cond
+    ;; non-hiccup child that should be rendered
+    (not (vector? value))
+    (if (= kind :kind/hiccup)
+      (throw (ex-info "kind/hiccup is only meaningful on vectors"
+                      {:id   ::kind-hiccup-non-vector
+                       :note note}))
+      (render note))
+
+    ;;;; below here value must be a vector
+
+    ;; annotated as something other than hiccup
+    (and kind (not= kind :kind/hiccup))
     (render note)
-    (cond (instance? IDeref hiccup)
-          (recur @hiccup render)
 
-          (vector? hiccup)
-          (let [[tag & children] hiccup
-                c (first children)
-                attrs (and (map? c) (not (visualization c)) c)]
-            (cond (reagent? tag) (render {:kind :kind/reagent :value hiccup})
-                  (scittle? tag) (render {:kind :kind/scittle :value hiccup})
-                  :else (if attrs
-                          (into [tag attrs] (map #(render-hiccup-recursively % render)) (next children))
-                          (into [tag] (map #(render-hiccup-recursively % render)) children))))
+    ;; special syntax for reagent
+    (reagent? (first value))
+    (render {:kind :kind/reagent :value value})
 
-          :else
-          hiccup)))
+    ;; special syntax for scittle
+    (scittle? (first value))
+    (render {:kind :kind/scittle :value value})
+
+    ;; vector that is not hiccup
+    (not (keyword? (first value)))
+    (render note)
+
+    :else-hiccup
+    (let [[tag & children] value
+          c (first children)
+          attrs (and (attrs? c) c)
+          children (if attrs
+                     (next children)
+                     children)
+          notes (for [child children]
+                  (render-hiccup-recursively {:value child} render))]
+      (-> (update note :deps union-into (keep :deps notes))
+          (assoc :hiccup (into (if attrs
+                                 [tag attrs]
+                                 [tag])
+                               (map :hiccup notes)))))))
 
 (defn render-table-recursively
-  [value render]
-  (let [{:keys [column-names row-vectors]} value]
-    [:table
-     [:thead
-      (into [:tr]
-            (for [header column-names]
-              [:th (render {:value header})]))]
-     (into [:tbody]
-           (for [row row-vectors]
-             (into [:tr]
-                   (for [column row]
-                     [:td (render {:value column})]))))]))
+  [{:as note :keys [value]} render]
+  (let [{:keys [column-names row-vectors]} value
+        header-notes (for [column-name column-names]
+                       (render {:value column-name}))
+        row-notes (for [row row-vectors]
+                    (for [column row]
+                      (render {:value column})))]
+    (-> note
+        (update :deps union-into
+                (keep :deps header-notes)
+                (keep :deps (apply concat row-notes)))
+        (assoc :hjccup [:table
+                        [:thead (into [:tr]
+                                      (for [header header-notes]
+                                        (:hiccup header)))]
+                        (into [:tbody]
+                              (for [row row-notes]
+                                (into [:tr]
+                                      (for [column row]
+                                        [:td (:hiccup column)]))))]))))
+
+(defmacro condp->
+  "Takes an expression and a set of predicate/form pairs. Threads expr (via ->)
+  through each form for which the corresponding predicate is true of expr.
+  Note that, unlike cond branching, condp-> threading does not short circuit
+  after the first true test expression."
+  [expr & clauses]
+  (assert (even? (count clauses)))
+  (let [g (gensym)
+        pstep (fn [[pred step]] `(if (~pred ~g) (-> ~g ~step) ~g))]
+    `(let [~g ~expr
+           ~@(interleave (repeat g) (map pstep (partition 2 clauses)))]
+       ~g)))
+
+(defn kind-class [kind]
+  (when (not= kind :kind/hiccup)
+    (-> (str (symbol kind))
+        (str/replace "/" "-"))))
+
+(defn join-classes [classes]
+  (some->> (remove nil? classes)
+           (mapcat #(str/split % #"\s+"))
+           (distinct)
+           (seq)
+           (str/join " ")))
+
+(defn kindly-style [{:as rendered-note :keys [kind kindly/options hiccup]}]
+  (if (and kind (vector? hiccup))
+    (->> (let [[tag & more] hiccup
+               attrs (first more)
+               class (join-classes [(kind-class kind)
+                                    (:class options)
+                                    (when (map? attrs)
+                                      (:class attrs))])
+               m (cond-> (select-keys options [:style])
+                         (not (str/blank? class)) (assoc :class class))]
+           (if (map? attrs)
+             (update hiccup 1 kindly/deep-merge m)
+             (into [tag m] more)))
+         (assoc rendered-note :hiccup))
+    ;; else - no kind
+    rendered-note))
+
+(defn advise-render-style [note render]
+  (condp-> (advise-with-deps note)
+           show? (-> (render)
+                     (kindly-style))))
+
+(defn index-notes [notes]
+  (map-indexed (fn [idx x] (assoc x :idx idx)) notes))

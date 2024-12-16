@@ -1,6 +1,7 @@
 (ns scicloj.kindly-render.note.to-hiccup-js
   (:require [clojure.pprint :as pprint]
             [clojure.string :as str]
+            [clojure.edn :as edn]
             [scicloj.kindly-render.shared.walk :as walk]
             [scicloj.kindly-render.shared.util :as util]
             [scicloj.kindly-render.note.to-hiccup :as to-hiccup])
@@ -9,15 +10,15 @@
 (defmulti render-advice :kind)
 
 (defn render [note]
-  (let [advice (walk/advise-deps note)
-        hiccup (render-advice advice)]
-    (to-hiccup/kindly-style hiccup advice)))
+  (walk/advise-render-style note render-advice))
 
+;; fallback to regular hiccup
 ;; fallback to regular hiccup
 (defmethod render-advice :default [note]
   (to-hiccup/render-advice note))
 
-(defmethod render-advice :kind/hidden [note])
+(defmethod render-advice :kind/hidden [note]
+  note)
 
 (defn vega [value]
   [:div {:style {:width "100%"}}
@@ -25,11 +26,13 @@
                  (util/json-str value)
                  ");")]])
 
-(defmethod render-advice :kind/vega [{:keys [value]}]
-  (vega value))
+(defmethod render-advice :kind/vega [{:as note :keys [value]}]
+  (->> (vega value)
+       (assoc note :hiccup)))
 
-(defmethod render-advice :kind/vega-lite [{:keys [value]}]
-  (vega value))
+(defmethod render-advice :kind/vega-lite [{:as note :keys [value]}]
+  (->> (vega value)
+       (assoc note :hiccup)))
 
 (defn format-code [form]
   (binding [pprint/*print-pprint-dispatch* pprint/code-dispatch]
@@ -54,127 +57,129 @@
 (defn gen-id []
   (str (no-spaces *id-prefix*) "-" (swap! *id-counter* inc)))
 
-(defmethod render-advice :kind/reagent [{:keys [value]}]
-  (let [id (gen-id)]
-    [:div {:id id}
-     (scittle [(list 'dom/render
-                     (if (vector? value) value [value])
-                     (list 'js/document.getElementById id))])]))
+(defmethod render-advice :kind/reagent [{:as note :keys [value]}]
+  (->> (let [id (gen-id)]
+         [:div {:id id}
+          (scittle [(list 'dom/render
+                          (if (vector? value) value [value])
+                          (list 'js/document.getElementById id))])])
+       (assoc note :hiccup)))
 
-(defmethod render-advice :kind/scittle [{:keys [form value]}]
+(defmethod render-advice :kind/scittle [{:as note :keys [form code value]}]
   ;; quoted forms will be unquoted in the scittle output because they should have no effect in Clojure
   ;; unquoted forms may cause effects in Clojure and appear as a scittle script
-  (let [forms (if (or (and (seq? form) (= 'quote (first form)))
-                      (nil? form))
-                (if (vector? value) value [value])
-                (if (vector? form) form [form]))]
-    (scittle forms)))
+  (->> (let [form (if (and (nil? form) code)
+                    (edn/read-string code)
+                    form)
+             forms (if (or (and (seq? form) (= 'quote (first form)))
+                           (nil? form))
+                     (if (vector? value) value [value])
+                     (if (vector? form) form [form]))]
+         (scittle forms))
+       (assoc note :hiccup)))
 
-(defn portal [{:keys [value]}]
-  [:div
-   [:script
-    (str "portal.extensions.vs_code_notebook.activate().renderOutputItem(
+(defmethod render-advice :kind/portal [{:keys [value] :as note}]
+  (->> [:div
+        [:script
+         (str "portal.extensions.vs_code_notebook.activate().renderOutputItem(
   {\"mime\": \"x-application/edn\",
    \"text\": (() => " (pr-str (pr-str value)) ")},
-  document.currentScript.parentElement);")]])
-
-(defmethod render-advice :kind/portal [note]
-  (portal note))
+  document.currentScript.parentElement);")]]
+       (assoc note :hiccup)))
 
 ;; Data types that can be recursive
 
-(defmethod render-advice :kind/vector [{:keys [value]}]
-  (walk/render-data-recursively {:class "kind-vector"} value render))
+(defmethod render-advice :kind/vector [{:as note :keys [value]}]
+  (walk/render-data-recursively note {:class "kind-vector"} value render))
 
-(defmethod render-advice :kind/map [{:keys [value]}]
-  (walk/render-data-recursively {:class "kind-map"} (apply concat value) render))
+(defmethod render-advice :kind/map [{:as note :keys [value]}]
+  ;; kindly.css puts kind-map in a grid
+  (walk/render-data-recursively note {:class "kind-map"} (apply concat value) render))
 
-(defmethod render-advice :kind/set [{:keys [value]}]
-  (walk/render-data-recursively {:class "kind-set"} value render))
+(defmethod render-advice :kind/set [{:as note :keys [value]}]
+  (walk/render-data-recursively note {:class "kind-set"} value render))
 
-(defmethod render-advice :kind/seq [{:keys [value]}]
-  (walk/render-data-recursively {:class "kind-seq"} value render))
+(defmethod render-advice :kind/seq [{:as note :keys [value]}]
+  (walk/render-data-recursively note {:class "kind-seq"} value render))
 
 ;; Special data type hiccup that needs careful expansion
 
-(defmethod render-advice :kind/hiccup [{:keys [value]}]
-  (walk/render-hiccup-recursively value render))
+(defmethod render-advice :kind/hiccup [note]
+  (walk/render-hiccup-recursively note render))
 
-(defmethod render-advice :kind/table [{:keys [value]}]
+(defmethod render-advice :kind/table [{:as note :keys [value]}]
   (walk/render-table-recursively value render))
 
-(defmethod render-advice :kind/tex [{:keys [value]}]
-  (into [:div]
-        (for [s (if (vector? value) value [value])]
-          [:div
-           [:script
-            (format "katex.render(%s, document.currentScript.parentElement, {throwOnError: false});"
-                    (util/json-str s))]])))
+(defmethod render-advice :kind/tex [{:as note :keys [value]}]
+  (->> (into [:div]
+             (for [s (if (vector? value) value [value])]
+               [:div
+                [:script
+                 (format "katex.render(%s, document.currentScript.parentElement, {throwOnError: false});"
+                         (util/json-str s))]]))
+       (assoc note :hiccup)))
 
-(defn extract-style [note]
-  (-> note
-      :kindly/options
-      :element/style
-      (or {:height "400px"
-           :width  "100%"})))
+(def default-style {:height "400px"
+                    :width  "100%"})
 
-(defmethod render-advice :kind/cytoscape [{:keys [value]
-                                           :as   note}]
-  [:div
-   {:style (extract-style note)}
-   [:script (format "
+(defmethod render-advice :kind/cytoscape [{:as note :keys [value]}]
+  (->> [:div {:style default-style}
+        [:script (format "
 {
 value = %s;
 value['container'] = document.currentScript.parentElement;
 cytoscape(value);
 };"
-                    (util/json-str value))]])
+                         (util/json-str value))]]
+       (assoc note :hiccup)))
 
-(defmethod render-advice :kind/echarts [{:keys [value]
-                                         :as   note}]
-  [:div {:style (extract-style note)}
-   [:script (format "
+(defmethod render-advice :kind/echarts [{:as note :keys [value]}]
+  (->> [:div {:style default-style}
+        [:script (format "
 {
 var myChart = echarts.init(document.currentScript.parentElement);
 myChart.setOption(%s);
 };"
-                    (util/json-str value))]])
+                         (util/json-str value))]]
+       (assoc note :hiccup)))
 
-(defmethod render-advice :kind/plotly [{:keys [value]}]
-  (let [{:keys [data layout config]
-         :or   {layout {}
-                config {}}} value]
-    [:div
-     [:script
-      (format
-        "Plotly.newPlot(document.currentScript.parentElement,
-%s, %s, %s);"
-        (util/json-str data)
-        (util/json-str layout)
-        (util/json-str config))]]))
+(defmethod render-advice :kind/plotly [{:as note :keys [value]}]
+  (->> (let [{:keys [data layout config]
+              :or   {layout {}
+                     config {}}} value]
+         [:div
+          [:script
+           (format
+             "Plotly.newPlot(document.currentScript.parentElement,
+     %s, %s, %s);"
+             (util/json-str data)
+             (util/json-str layout)
+             (util/json-str config))]])
+       (assoc note :hiccup)))
 
-(defmethod render-advice :kind/ggplotly [{:keys [value]
-                                          :as   note}]
-  (let [id (gen-id)]
-    [:div {:class "plotly html-widget html-fill-item-overflow-hidden html-fill-item"
-           :id    id
-           :style (extract-style note)}
-     [:script {:type     "application/htmlwidget-sizing"
-               :data-for id}
-      (util/json-str {:viewer  {:width   "100%"
-                                :height  400
-                                :padding "0"
-                                :fille   true}
-                      :browser {:width   "100%"
-                                :height  400
-                                :padding "0"
-                                :fille   true}})]
-     [:script {:type     "application/json"
-               :data-for id}
-      (util/json-str value)]]))
+(defmethod render-advice :kind/ggplotly [{:as note :keys [value]}]
+  (->> (let [id (gen-id)]
+         [:div {:class "plotly html-widget html-fill-item-overflow-hidden html-fill-item"
+                :id    id
+                :style default-style}
+          [:script {:type     "application/htmlwidget-sizing"
+                    :data-for id}
+           (util/json-str {:viewer  {:width   "100%"
+                                     :height  400
+                                     :padding "0"
+                                     :fille   true}
+                           :browser {:width   "100%"
+                                     :height  400
+                                     :padding "0"
+                                     :fille   true}})]
+          [:script {:type     "application/json"
+                    :data-for id}
+           (util/json-str value)]])
+       (assoc note :hiccup)))
 
-(defmethod render-advice :kind/highcharts [{:keys [value]}]
-  [:div
-   [:script
-    (format "Highcharts.chart(document.currentScript.parentElement, %s);"
-            (util/json-str value))]])
+(defmethod render-advice :kind/highcharts [{:as note :keys [value]}]
+  (->> [:div
+        [:script
+         (format "Highcharts.chart(document.currentScript.parentElement, %s);"
+                 (util/json-str value))]]
+       (assoc note :hiccup)))

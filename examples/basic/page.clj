@@ -33,7 +33,8 @@
                 {:dataset-name "my dataset"}))
 
 (def notebook
-  {:notes [
+  {:kindly/options {:deps #{:kindly :clay}}
+   :notes [
            ;; kind-portal is not loaded, so this should render a short
            ;; message explaining its absence
            {:value portal}
