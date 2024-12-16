@@ -18,8 +18,22 @@
 (defn clean [_]
   (b/delete {:path "target"}))
 
+(defn pom-template [version]
+  [[:description "`kindly-render` is a Clojure library for rendering kinds as markdown or html"]
+   [:url "https://scicloj.github.io/kindly-render"]
+   [:licenses
+    [:license
+     [:name "Eclipse Public License - v 2.0"]
+     [:url "https://www.eclipse.org/legal/epl-2.0/"]]]
+   [:scm
+    [:url "https://github.com/scicloj/kindly-render"]
+    [:connection "scm:git:https://github.com/scicloj/kindly-render.git"]
+    [:developerConnection "scm:git:ssh:git@github.com:scicloj/kindly-render.git"]
+    [:tag (str "v" version)]]])
+
 (defn jar [_]
-  (b/write-pom {:class-dir class-dir
+  (b/write-pom {:pom-data (pom-template version)
+                :class-dir class-dir
                 :lib lib
                 :version version
                 :basis basis
