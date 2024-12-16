@@ -51,10 +51,11 @@ A note may be annotated for visualization with kindly:
 
 ## Usage
 
-No releases are available yet, please use a git dependency if you want to try it.
+[![Clojars Project](https://img.shields.io/clojars/v/org.scicloj/kindly-render.svg)](https://clojars.org/org.scicloj/kindly-render)
 
 ```clojure
 (require '[scicloj.kindly-render.note.to-hiccup :as to-hiccup])
+(def my-note {:value {:my "value"}})
 (to-hiccup/render my-note)
 ```
 
@@ -62,6 +63,7 @@ Returns a hiccup representation of the visualization of `my-note`.
 
 ```clojure
 (require '[scicloj.kindly-render.notes.to-html-page :as to-html-page])
+(def my-notebook {:notes [my-note]})
 (to-html-page/notes-to-html my-notebook)
 ```
 
