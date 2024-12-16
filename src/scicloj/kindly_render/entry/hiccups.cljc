@@ -46,5 +46,5 @@
   "Updates the notes of a notebook with hiccup for display, and adds resource hiccups"
   [notebook]
   (-> (update notebook :notes walk/index-notes)
-      (update :notes #(map note-hiccups %))
+      (update :notes #(mapv note-hiccups %))
       (resources/with-resource-hiccups)))

@@ -5,19 +5,35 @@
             [nrepl.middleware.interruptible-eval :as eval]
             [nrepl.middleware.print :as print]
             [scicloj.kindly-render.notes.to-html-page :as to-html-page]
+            [scicloj.kindly-render.notes.to-hiccup-page :as to-hiccup-page]
             [scicloj.kindly-render.entry.hiccups :as hiccups])
   (:import (nrepl.transport Transport)))
+
+;; kindly render specific
+;; this should be a separate middleware,
+;; clay should have its own middleware as well
+(defn safe-render [form value]
+  (try
+    (let [note {:form  form
+                :value value}
+          notebook (hiccups/with-hiccups {:notes [note]})
+          ;; TODO: maybe this shows the interface is not perfect yet
+          hiccups (to-hiccup-page/hiccups notebook)]
+      (if (seq hiccups)
+        (assoc notebook :html (to-html-page/page notebook))
+        notebook))
+    (catch Exception ex
+      (println "OH NO!!!"))))
 
 (defn eval*
   "Returns a wrapping map with extra information as value"
   [form]
   (let [value (clojure.core/eval form)
-        note {:form  form
-              :value value}
-        notebook (hiccups/with-hiccups {:notes [note]})
-        kind (get-in notebook [:notes 0] :kind)
-        html (to-html-page/page notebook)]
-    {:value              (if kind
+        notebook (safe-render form value)
+        kind (get-in notebook [:notes 0 :kind])
+        html (:html notebook)]
+    ;; actually can be done with metadata?? not always - but if it can it's fine
+    {:value              (if (and html kind)
                            ;; TODO: Cursive should use :kindly-render/html instead
                            (tagged-literal 'cursive/html {:html html})
                            value)
@@ -28,6 +44,17 @@
      ;; but that's probably fine
      :kindly-render/html html
      ::print/keys        #{:value :meta :form-meta :kindly/kind}}))
+
+;; kindly is a way to annotate visualizations
+;; this middleware detects them and sends html
+;; but we need to annotate the html
+;; why not annotate it with kindly?
+;; (because we lose the original kind)
+;;
+;; maybe kindly can be used in multiple places
+;;
+
+
 
 (defn unwrap-value
   "Collapses the extra fields from :value into msg"
@@ -84,7 +111,7 @@
         (:kindly-render/html)
         (show-html)))
 
-  (tagged-literal 'cursive/html {:html "<h1> hi </h1>"})
+  (tagged-literal 'cursive/html {:html "<h1>hi</h1>"})
 
 
   (server/stop-server server))

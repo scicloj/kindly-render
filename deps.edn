@@ -3,22 +3,29 @@
            ;; TODO: probably we should either replace or leave it up to the user
            hiccup/hiccup                  {:mvn/version "2.0.0-RC3"}
            io.github.nextjournal/markdown {:mvn/version "0.5.148"}
-           org.scicloj/kindly-advice      {:local/root "../kindly-advice"
-                                           #_#_:mvn/version "1-beta9"}}
+           org.scicloj/kindly-advice      {
+                                           :mvn/version "1-beta9"}}
  :aliases {:dev   {:extra-paths ["dev" "examples"]
                    :extra-deps  {;; Clay requires Portal transitively, so we have to exclude
                                  ;; it here to test out behavior without Portal.
-                                 org.scicloj/clay           {:local/root "../clay" #_#_:mvn/version "2-beta11"}
+                                 org.scicloj/clay           {:local/root "../clay"}
                                  org.scicloj/noj            {:mvn/version "2-alpha12.1"}
 
                                  ;; Optional dependencies
                                  ;; org.scicloj/kind-portal {:mvn/version "1-beta1"}
 
-                                 techascent/tech.ml.dataset {:mvn/version "7.032"}}}
-           :build {:deps       {io.github.seancorfield/build-clj
-                                {:git/tag "v0.6.4" :git/sha "c21cfde"}}
+                                 techascent/tech.ml.dataset {:mvn/version "7.032"}
+                                 org.scicloj/kindly-advice {:local/root "../kindly-advice"}}}
+           #_#_:build {:deps       {
+                                ;;io.github.seancorfield/build-clj {:git/tag "v0.6.4" :git/sha "c21cfde"}
+                                slipset/deps-deploy {:mvn/version "0.2.1"}}
                    :ns-default build}
            :test  {:extra-paths ["test"]
                    :extra-deps  {org.clojure/test.check {:mvn/version "1.1.1"}
                                  io.github.cognitect-labs/test-runner
-                                 {:git/tag "v0.5.0" :git/sha "48c3c67"}}}}}
+                                 {:git/tag "v0.5.0" :git/sha "48c3c67"}}}
+           :build {:deps {io.github.clojure/tools.build {:git/tag "v0.10.6"
+                                                         :git/sha "52cf7d6"}
+                          slipset/deps-deploy {:mvn/version "0.2.2"}}
+                   :ns-default build}
+           :neil {:project {:name org.scicloj/kindly-render}}}}

@@ -37,7 +37,7 @@
    :notes [
            ;; kind-portal is not loaded, so this should render a short
            ;; message explaining its absence
-           {:value portal}
+           ;;{:value portal}
 
            ;; single kind
            {:value hiccup-list}
@@ -79,7 +79,8 @@
                                  '[my-ui]
                                  ;; reagent inline component
                                  '[(fn [props]
-                                     [:div "I'm a reagent component"])]])}
+                                     [:div "I'm a reagent component"
+                                      [:svg [:circle {:r 50}]]])]])}
 
            ]})
 

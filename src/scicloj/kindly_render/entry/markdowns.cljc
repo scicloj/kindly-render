@@ -41,5 +41,5 @@
 (defn with-markdowns [notebook]
   "Updates the notes of a notebook with markdown for display, and adds resource hiccups"
   (-> (update notebook :notes walk/index-notes)
-      (update :notes #(map note-markdowns %))
+      (update :notes #(mapv note-markdowns %))
       (resources/with-resource-hiccups)))
