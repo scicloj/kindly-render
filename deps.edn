@@ -28,4 +28,5 @@
                                                          :git/sha "52cf7d6"}
                           slipset/deps-deploy {:mvn/version "0.2.2"}}
                    :ns-default build}
-           :neil {:project {:name org.scicloj/kindly-render}}}}
+           :neil {:project {:name org.scicloj/kindly-render
+                            :version "0.1.0-alpha"}}}}
