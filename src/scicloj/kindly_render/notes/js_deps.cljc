@@ -10,7 +10,7 @@
 
 ;; TODO: use gh-pages published location
 ;; should these be folded into kindly.css?
-(def clay-root "https://raw.githubusercontent.com/scicloj/clay/refs/heads/main/resources/")
+(def clay-root "https://raw.githubusercontent.com/scicloj/clay/refs/heads/main/resources/styles/")
 (def clay-css ["bootstrap-generated-by-quarto.min.css"
                "bootstrap-toc-customization.css"
                "bootswatch-cosmo-bootstrap.min.css"

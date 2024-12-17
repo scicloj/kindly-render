@@ -17,7 +17,10 @@
 ;; this should be a separate middleware,
 ;; clay should have its own middleware as well
 (defn kindly-render [note]
-  (let [notebook (hiccups/with-hiccups {:notes [note]})
+  (let [notebook (hiccups/with-hiccups {:notes          [note]
+                                        :kindly/options {:deps    #{:kindly :clay}
+                                                         ;; TODO: there's a problem showing embedded js
+                                                         #_#_:package :embed}})
         ;; TODO: maybe there should be an api call to create a single page notebook
         kind (get-in notebook [:notes 0 :kind])
         hiccups (to-hiccup-page/hiccups notebook)]
@@ -57,13 +60,16 @@
     (let [note {:form  form
                 :value value}
           extra (kindly-render note)]
+      (when (:html extra) (spit "test.html" (:html extra)))
       (if (:html extra)
         ;; TODO: Cursive should use html in msg instead of tagged literals
         (tagged-literal 'cursive/html (select-keys extra [:html]))
         (assoc-meta value ::extra extra)))
     (catch Throwable ex
       ;; TODO: is there a better way to report nREPL middleware failures?
-      (println "Visualization failed:" (ex-message ex)))))
+      (throw (ex-info (str "Visualization failed:" (ex-message ex))
+                      {:id ::extra-calculation-failed}
+                      ex)))))
 
 (defn eval-with-extra
   "Returns a wrapping map with extra information as value"

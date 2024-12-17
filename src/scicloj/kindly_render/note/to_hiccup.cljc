@@ -51,8 +51,8 @@
 
 (defmethod render-advice :kind/html [{:as note :keys [value]}]
   ;; TODO: is hiccup/raw well supported or do we need to do something?
-  (->> [:hiccup/raw (util/kind-str value)]
-       (assoc note :html)))
+  (->> (util/kind-str value)
+       (assoc note :hiccup)))
 
 (defmethod render-advice :kind/pprint [{:as note :keys [value]}]
   (->> (pprint-block value)

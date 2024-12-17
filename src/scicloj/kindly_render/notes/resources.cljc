@@ -36,13 +36,13 @@
   [{:keys [src package async]}]
   (cond (not package) [:script {:type "text/javascript" :async async :src src}]
         (string? package) [:script {:type "text/javascript" :async async :src (relative src package)}]
-        :else-embed [:script {:type "text/javascript"} (slurp-resource src)]))
+        :else-embed [:script (slurp-resource src)]))
 
 (defmethod resource-hiccup :css
   [{:keys [href package]}]
   (cond (not package) [:link {:type "text/css" :rel "stylesheet" :href href}]
         (string? package) [:link {:type "text/css" :rel "stylesheet" :href (relative href package)}]
-        :else-embed [:link {:type "text/css" :rel "stylesheet"} (slurp-resource href)]))
+        :else-embed [:style (slurp-resource href)]))
 
 (defmethod resource-hiccup :scittle
   [{:keys [forms]}]
