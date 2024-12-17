@@ -6,63 +6,76 @@
             [nrepl.middleware.print :as print]
             [scicloj.kindly-render.notes.to-html-page :as to-html-page]
             [scicloj.kindly-render.notes.to-hiccup-page :as to-hiccup-page]
-            [scicloj.kindly-render.entry.hiccups :as hiccups])
-  (:import (nrepl.transport Transport)))
+            [scicloj.kindly-render.entry.hiccups :as hiccups]
+    ;; TODO: these dependencies should not be here, they are for testing convenience only
+            #_[scicloj.clay.v2.api :as clay]
+            #_[hiccup.core :as hiccup])
+  (:import (nrepl.transport Transport)
+           (clojure.lang IMeta)))
 
 ;; kindly render specific
 ;; this should be a separate middleware,
 ;; clay should have its own middleware as well
-(defn safe-render [form value]
+(defn kindly-render [note]
+  (let [notebook (hiccups/with-hiccups {:notes [note]})
+        ;; TODO: maybe there should be an api call to create a single page notebook
+        kind (get-in notebook [:notes 0 :kind])
+        hiccups (to-hiccup-page/hiccups notebook)]
+    (when (and kind (seq hiccups))
+      {:html (to-html-page/page notebook)
+       :kind (pr-str kind)})))
+
+;; clay render specific
+#_(defn clay-render [note]
+  (when-let [x (clay/make-hiccup {:single-form (:form note)})]
+    {:html (hiccup/html x)}))
+
+;; just preserve metadata for the IDE
+(defn meta-only [{:keys [form value]}]
+  {:meta (meta value)
+   :form-meta (meta form)})
+
+(defn assoc-meta [value k v]
+  "Adds `k` to value metadata if it can"
+  (if (instance? IMeta value)
+    (with-meta value (assoc (meta value) k v))
+    v))
+
+(defn dissoc-meta [value k]
+  "Removes `k` from the metadata of value if present"
+  (if (instance? IMeta value)
+    (with-meta value (dissoc (meta value) k))
+    value))
+
+(defn with-extra
+  "Adds extra information to be added when the transport sends value from server to client"
+  [form value]
   (try
     (let [note {:form  form
                 :value value}
-          notebook (hiccups/with-hiccups {:notes [note]})
-          ;; TODO: maybe this shows the interface is not perfect yet
-          hiccups (to-hiccup-page/hiccups notebook)]
-      (if (seq hiccups)
-        (assoc notebook :html (to-html-page/page notebook))
-        notebook))
-    (catch Exception ex
-      (println "OH NO!!!"))))
+          extra (kindly-render note)]
+      (if (:html extra)
+        ;; TODO: Cursive should use html in msg instead of tagged literals
+        (tagged-literal 'cursive/html (select-keys extra [:html]))
+        (assoc-meta value ::extra extra)))
+    (catch Throwable ex
+      ;; TODO: is there a better way to report nREPL middleware failures?
+      (println "Visualization failed:" (ex-message ex)))))
 
-(defn eval*
+(defn eval-with-extra
   "Returns a wrapping map with extra information as value"
   [form]
-  (let [value (clojure.core/eval form)
-        notebook (safe-render form value)
-        kind (get-in notebook [:notes 0 :kind])
-        html (:html notebook)]
-    ;; actually can be done with metadata?? not always - but if it can it's fine
-    {:value              (if (and html kind)
-                           ;; TODO: Cursive should use :kindly-render/html instead
-                           (tagged-literal 'cursive/html {:html html})
-                           value)
-     :meta               (meta value)
-     :form-meta          (meta form)
-     :kindly/kind        kind
-     ;; TODO: html can't be modified easily (inserting CSS), requires some string splicing
-     ;; but that's probably fine
-     :kindly-render/html html
-     ::print/keys        #{:value :meta :form-meta :kindly/kind}}))
-
-;; kindly is a way to annotate visualizations
-;; this middleware detects them and sends html
-;; but we need to annotate the html
-;; why not annotate it with kindly?
-;; (because we lose the original kind)
-;;
-;; maybe kindly can be used in multiple places
-;;
-
-
+  (let [value (clojure.core/eval form)]
+    (if (instance? IMeta value)
+      (with-extra form value)
+      value)))
 
 (defn unwrap-value
-  "Collapses the extra fields from :value into msg"
-  [msg]
-  (if (and (contains? msg :value)
-           (map? (:value msg))
-           (contains? (:value msg) ::print/keys))
-    (merge msg (:value msg))
+  "Collapses extra fields from value into msg if present"
+  [{:as msg :keys [value]}]
+  (if-let [extra (some-> value meta ::extra)]
+    (-> (merge msg extra)
+        (update :value dissoc-meta ::extra))
     msg))
 
 (defn unwrapping-transport
@@ -77,7 +90,7 @@
   "A handler that adds visualization information into the msg result of eval ops"
   [{:as req :keys [transport]}]
   (assoc req
-    :eval `eval*
+    :eval `eval-with-extra
     :transport (unwrapping-transport transport)))
 
 (defn wrap-kindly-render
