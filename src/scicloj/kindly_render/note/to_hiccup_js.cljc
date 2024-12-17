@@ -81,9 +81,9 @@
 (defmethod render-advice :kind/portal [{:keys [value] :as note}]
   (->> [:div
         [:script
-         (str "portal.extensions.vs_code_notebook.activate().renderOutputItem(
-  {\"mime\": \"x-application/edn\",
-   \"text\": (() => " (pr-str (pr-str value)) ")},
+         (str "portal_api.embed().renderOutputItem(
+  {'mime': 'x-application/edn',
+   'text': (() => " (pr-str (pr-str value)) ")},
   document.currentScript.parentElement);")]]
        (assoc note :hiccup)))
 

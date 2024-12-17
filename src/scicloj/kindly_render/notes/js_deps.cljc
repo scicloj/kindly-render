@@ -88,7 +88,7 @@
                                "https://unpkg.com/mathlive@0.85.1/dist/mathlive-static.css"
                                "https://unpkg.com/mathlive@0.85.1/dist/mathlive-fonts.css"]}
          ;; TODO: no remote url exists, publish, or fix upstream
-         #_#_:portal {:js [portal/url]}
+         :portal {:js ["https://scicloj.github.io/clay/clay_book.examples_files/portal25.js"]}
          ;; TODO: use a github deeplink url
          #_#_:htmlwidgets-ggplotly {:js  {:from-local-copy-of-repo
                                           [{:gh-repo       "scicloj/ggplotly-deps"
