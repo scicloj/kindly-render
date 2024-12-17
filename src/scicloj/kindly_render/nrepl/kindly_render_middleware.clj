@@ -8,8 +8,8 @@
             [scicloj.kindly-render.notes.to-hiccup-page :as to-hiccup-page]
             [scicloj.kindly-render.entry.hiccups :as hiccups]
     ;; TODO: these dependencies should not be here, they are for testing convenience only
-            #_[scicloj.clay.v2.api :as clay]
-            #_[hiccup.core :as hiccup])
+    #_[scicloj.clay.v2.api :as clay]
+    #_[hiccup.core :as hiccup])
   (:import (nrepl.transport Transport)
            (clojure.lang IMeta)))
 
@@ -27,12 +27,15 @@
 
 ;; clay render specific
 #_(defn clay-render [note]
-  (when-let [x (clay/make-hiccup {:single-form (:form note)})]
-    {:html (hiccup/html x)}))
+    (when-let [hiccups (seq (clay/make-hiccup {:single-form       (:form note)
+                                               :source-path       (:file (meta (:value note)))
+                                               :inline-js-and-css true}))]
+      (doto {:html (hiccup/html hiccups)}
+        (->> :html (spit "clay-debug.html")))))
 
 ;; just preserve metadata for the IDE
 (defn meta-only [{:keys [form value]}]
-  {:meta (meta value)
+  {:meta      (meta value)
    :form-meta (meta form)})
 
 (defn assoc-meta [value k v]
