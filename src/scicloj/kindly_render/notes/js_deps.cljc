@@ -58,7 +58,10 @@
   #:kind{:vega         {:js ["https://cdn.jsdelivr.net/npm/vega@5.25.0"
                              "https://cdn.jsdelivr.net/npm/vega-lite@5.16.3"
                              "https://cdn.jsdelivr.net/npm/vega-embed@6.22.2"]}
-         :echarts      {:js ["https://cdn.jsdelivr.net/npm/echarts@5.4.1/dist/echarts.min.js"]}
+         :vega-lite    {:js ["https://cdn.jsdelivr.net/npm/vega@5.25.0"
+                             "https://cdn.jsdelivr.net/npm/vega-lite@5.16.3"
+                             "https://cdn.jsdelivr.net/npm/vega-embed@6.22.2"]}
+         :echarts      {:js ["https://cdn.jsdelivr.net/npm/echarts@5.4.1/dist/echarts.js"]}
          :cytoscape    {:js ["https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.23.0/cytoscape.min.js"]}
          :plotly       {:js ["https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.20.0/plotly.min.js"]}
          ;; Tex is a bit different because it may be required by markdown (not by kind)
@@ -88,7 +91,7 @@
                                "https://unpkg.com/mathlive@0.85.1/dist/mathlive-static.css"
                                "https://unpkg.com/mathlive@0.85.1/dist/mathlive-fonts.css"]}
          ;; TODO: no remote url exists, publish, or fix upstream
-         :portal {:js ["https://scicloj.github.io/clay/clay_book.examples_files/portal25.js"]}
+         :portal       {:js ["https://scicloj.github.io/clay/clay_book.examples_files/portal25.js"]}
          ;; TODO: use a github deeplink url
          #_#_:htmlwidgets-ggplotly {:js  {:from-local-copy-of-repo
                                           [{:gh-repo       "scicloj/ggplotly-deps"

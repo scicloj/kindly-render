@@ -1,70 +1,55 @@
 (ns scicloj.kindly-render.nrepl.kindly-render-middleware
+  "nREPL middleware for adding visualization information to values"
   (:require [nrepl.core :as nrepl]
             [nrepl.middleware :as middleware]
             [nrepl.transport :as t]
             [nrepl.middleware.interruptible-eval :as eval]
             [nrepl.middleware.print :as print]
-            [scicloj.kindly-render.notes.to-html-page :as to-html-page]
-            [scicloj.kindly-render.notes.to-hiccup-page :as to-hiccup-page]
-            [scicloj.kindly-render.entry.hiccups :as hiccups]
-    ;; TODO: these dependencies should not be here, they are for testing convenience only
-    #_[scicloj.clay.v2.api :as clay]
-    #_[hiccup.core :as hiccup])
+            [scicloj.kindly.v4.kind :as kind])
   (:import (nrepl.transport Transport)
-           (clojure.lang IMeta)))
+           (clojure.lang IMeta IReference)))
 
-;; kindly render specific
-;; this should be a separate middleware,
-;; clay should have its own middleware as well
-(defn kindly-render [note]
-  (let [notebook (hiccups/with-hiccups {:notes          [note]
-                                        :kindly/options {:deps    #{:kindly :clay}
-                                                         ;; TODO: there's a problem showing embedded js
-                                                         #_#_:package :embed}})
-        ;; TODO: maybe there should be an api call to create a single page notebook
-        kind (get-in notebook [:notes 0 :kind])
-        hiccups (to-hiccup-page/hiccups notebook)]
-    (when (and kind (seq hiccups))
-      {:html (to-html-page/page notebook)
-       :kind (pr-str kind)})))
+(kind/md "Presenting the results of evaluation")
 
-;; clay render specific
-#_(defn clay-render [note]
-    (when-let [hiccups (seq (clay/make-hiccup {:single-form       (:form note)
-                                               :source-path       (:file (meta (:value note)))
-                                               :inline-js-and-css true}))]
-      (doto {:html (hiccup/html hiccups)}
-        (->> :html (spit "clay-debug.html")))))
-
-;; just preserve metadata for the IDE
-(defn meta-only [{:keys [form value]}]
+(defn keep-meta
+  "Observes meta and form-meta, regardless of the state of *print-meta*"
+  [{:keys [form value]}]
   {:meta      (meta value)
    :form-meta (meta form)})
 
-(defn assoc-meta [value k v]
-  "Adds `k` to value metadata if it can"
-  (if (instance? IMeta value)
-    (with-meta value (assoc (meta value) k v))
-    v))
+(defonce ^{:doc "A function that will be called with `{:form form, :value value}` and returns a map of extra information for IDE use"}
+  visualize
+  keep-meta)
 
-(defn dissoc-meta [value k]
-  "Removes `k` from the metadata of value if present"
-  (if (instance? IMeta value)
-    (with-meta value (dissoc (meta value) k))
-    value))
+(defn install!
+  "The visualizer could be a pluggable, configurable part"
+  [sym]
+  (alter-var-root #'visualize (constantly (requiring-resolve sym))))
+
+;; TODO: find a nicer way to facilitate installation of visualizer(s)
+;; the current method is here for testing convenience
+#_(install! 'keep-meta)
+(install! 'scicloj.kindly-render.nrepl.clay-middleware/clay-render)
+#_(install! 'scicloj.kindly-render.notes.to-html-page/render-note)
+
+(defn update-meta [value f & args]
+  "Does alter-meta!, vary-meta, or nothing as appropriate for value"
+  (cond (instance? IReference value) (do (apply alter-meta! value f args) value)
+        (instance? IMeta value) (apply vary-meta value f args)
+        :else value))
 
 (defn with-extra
-  "Adds extra information to be added when the transport sends value from server to client"
+  "Adds extra information to be added when the transport sends value from server to client.
+  Only operates on values that can have metadata."
   [form value]
   (try
     (let [note {:form  form
                 :value value}
-          extra (kindly-render note)]
-      (when (:html extra) (spit "test.html" (:html extra)))
+          extra (visualize note)]
       (if (:html extra)
         ;; TODO: Cursive should use html in msg instead of tagged literals
         (tagged-literal 'cursive/html (select-keys extra [:html]))
-        (assoc-meta value ::extra extra)))
+        (update-meta value assoc ::extra extra)))
     (catch Throwable ex
       ;; TODO: is there a better way to report nREPL middleware failures?
       (throw (ex-info (str "Visualization failed:" (ex-message ex))
@@ -75,16 +60,16 @@
   "Returns a wrapping map with extra information as value"
   [form]
   (let [value (clojure.core/eval form)]
-    (if (instance? IMeta value)
-      (with-extra form value)
-      value)))
+    (with-extra form value)))
 
 (defn unwrap-value
   "Collapses extra fields from value into msg if present"
   [{:as msg :keys [value]}]
   (if-let [extra (some-> value meta ::extra)]
     (-> (merge msg extra)
-        (update :value dissoc-meta ::extra))
+        ;; TODO: should remove from value when IDEs have the ability to find the information elsewhere
+        ;;(update :value update-meta dissoc ::extra)
+        )
     msg))
 
 (defn unwrapping-transport
