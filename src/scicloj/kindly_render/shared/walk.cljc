@@ -156,7 +156,7 @@
         (update :deps union-into
                 (keep :deps header-notes)
                 (keep :deps (apply concat row-notes)))
-        (assoc :hjccup [:table
+        (assoc :hiccup [:table
                         [:thead (into [:tr]
                                       (for [header header-notes]
                                         (:hiccup header)))]
