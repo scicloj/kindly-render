@@ -2,3 +2,5 @@
 .clj-kondo/
 .ipynb_checkpoints/
 .lsp/
+.nrepl-port
+.calva/
