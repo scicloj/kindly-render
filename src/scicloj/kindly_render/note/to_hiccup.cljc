@@ -32,8 +32,7 @@
   (blockquote [(block "sourceCode language-clojure printed-clojure" x)]))
 
 (defn pprint-block [value]
-  (result-block (binding [*print-meta* true]
-                  (with-out-str (pprint/pprint value)))))
+  (result-block (with-out-str (pprint/pprint value))))
 
 (defn message [s channel]
   (blockquote [[:strong channel] (block nil s)]))
