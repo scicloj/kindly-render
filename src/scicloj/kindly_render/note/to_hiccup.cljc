@@ -38,8 +38,8 @@
 (defn message [s channel]
   (blockquote [[:strong channel] (block nil s)]))
 
-(defmethod render-advice :kind/code [{:as note :keys [code]}]
-  (->> (block "sourceCode" code)
+(defmethod render-advice :kind/code [{:as note :keys [value]}]
+  (->> (block "sourceCode" value)
        (assoc note :hiccup)))
 
 (defmethod render-advice :kind/hidden [note]
