@@ -26,4 +26,4 @@
            ;; # Version
            ;; neil version <version>
            :neil {:project {:name org.scicloj/kindly-render
-                            :version "0.1.1-alpha"}}}}
+                            :version "0.1.2-alpha"}}}}
