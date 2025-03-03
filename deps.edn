@@ -24,6 +24,6 @@
                           slipset/deps-deploy {:mvn/version "0.2.2"}}
                    :ns-default build}
            ;; # Version
-           ;; neil version <version>
+           ;; neil version set <version>
            :neil {:project {:name org.scicloj/kindly-render
                             :version "0.1.2-alpha"}}}}
