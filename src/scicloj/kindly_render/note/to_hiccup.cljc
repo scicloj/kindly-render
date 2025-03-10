@@ -174,17 +174,17 @@
            :hiccup s)))
 
 (defmethod render-advice :kind/fn
-  [{:keys [value form] :as note}]
+  [{:keys [value form render-fn] :as note}]
 
   (let [new-note
         (if (vector? value)
           (let [f (first value)]
-            (render {:value (apply f (rest value))
+            (render-fn {:value (apply f (rest value))
                      :form form}))
 
           (let [f (or (:kindly/f value)
                       (-> note :kindly/options :kindly/f))]
-            (render {:value (f (dissoc value :kindly/f))
+            (render-fn {:value (f (dissoc value :kindly/f))
                      :form form})))]
 
     (assoc note
