@@ -98,30 +98,30 @@
 
 ;; Data types that can be recursive
 
-(defmethod render-advice :kind/vector [{:as note :keys [value]}]
-  (walk/render-data-recursively note {:class "kind-vector"} value render))
+(defmethod render-advice :kind/vector [{:as note :keys [value render-fn]}]
+  (walk/render-data-recursively note {:class "kind-vector"} value render-fn))
 
-(defmethod render-advice :kind/map [{:as note :keys [value]}]
+(defmethod render-advice :kind/map [{:as note :keys [value render-fn]}]
   ;; kindly.css puts kind-map in a grid
-  (walk/render-data-recursively note {:class "kind-map"} (apply concat value) render))
+  (walk/render-data-recursively note {:class "kind-map"} (apply concat value) render-fn))
 
-(defmethod render-advice :kind/set [{:as note :keys [value]}]
-  (walk/render-data-recursively note {:class "kind-set"} value render))
+(defmethod render-advice :kind/set [{:as note :keys [value render-fn]}]
+  (walk/render-data-recursively note {:class "kind-set"} value render-fn))
 
-(defmethod render-advice :kind/seq [{:as note :keys [value]}]
-  (walk/render-data-recursively note {:class "kind-seq"} value render))
+(defmethod render-advice :kind/seq [{:as note :keys [value render-fn]}]
+  (walk/render-data-recursively note {:class "kind-seq"} value render-fn))
 
 ;; Special data type hiccup that needs careful expansion
 
-(defmethod render-advice :kind/hiccup [note]
-  (walk/render-hiccup-recursively note render))
+(defmethod render-advice :kind/hiccup [{:as note :keys [render-fn]}]
+  (walk/render-hiccup-recursively note render-fn))
 
-(defmethod render-advice :kind/table [note]
+(defmethod render-advice :kind/table [{:as note :keys [render-fn]}]
   (if (contains?
        (->> note :advice (map first) set)
        :kind/dataset)
     (render (assoc note :kind :kind/dataset))
-    (walk/render-table-recursively note render)))
+    (walk/render-table-recursively note render-fn)))
 
 (defmethod render-advice :kind/video [{:keys [value] :as note}]
   
