@@ -1,9 +1,12 @@
 (ns scicloj.kindly-render.note.to-hiccup
   (:require [clojure.pprint :as pprint]
             [clojure.string :as str]
+            [clojure.data.codec.base64 :as b64]
             [scicloj.kindly-render.shared.walk :as walk]
             [scicloj.kindly-render.shared.util :as util]
-            [scicloj.kindly-render.shared.from-markdown :as from-markdown]))
+            [scicloj.kindly-render.shared.from-markdown :as from-markdown])
+  (:import [javax.imageio ImageIO]) 
+  )
 
 (defmulti render-advice :kind)
 
@@ -57,11 +60,20 @@
   (->> (pprint-block value)
        (assoc note :hiccup)))
 
-(defmethod render-advice :kind/image [{:as note :keys [value]}]
-  (->> (if (string? value)
-         [:img {:src value}]
-         [:div "Image kind not implemented"])
-       (assoc note :hiccup)))
+(defmethod render-advice :kind/image
+  [{:as note :keys [value]}]
+  (let [out (io/java.io.ByteArrayOutputStream.)
+        v
+        (if (sequential? value)
+          (first value)
+          value)
+        _ (ImageIO/write v "png" out)
+        hiccup [:img {:src (str "data:image/png;base64,"
+                                (-> out .toByteArray b64/encode String.))}]]
+
+    (assoc note
+           :hiccup hiccup)))
+
 
 ;; TODO: this is problematic because it creates files
 #_(defmethod render-advice :kind/image [{:keys [value]}]
@@ -105,7 +117,11 @@
   (walk/render-hiccup-recursively note render))
 
 (defmethod render-advice :kind/table [note]
-  (walk/render-table-recursively note render))
+  (if (contains?
+       (->> note :advice (map first) set)
+       :kind/dataset)
+    (render (assoc note :kind :kind/dataset))
+    (walk/render-table-recursively note render)))
 
 (defmethod render-advice :kind/video [{:keys [value] :as note}]
   
@@ -149,3 +165,28 @@
        (str/join \newline)
        (from-markdown/to-hiccup)
        (assoc note :hiccup)))
+
+(defmethod render-advice :kind/var
+  [{:keys [value form] :as note}]
+  (let [sym (second value)
+        s (str "#'" (str *ns*) "/" sym)]
+    (assoc note
+           :hiccup s)))
+
+(defmethod render-advice :kind/fn
+  [{:keys [value form] :as note}]
+
+  (let [new-note
+        (if (vector? value)
+          (let [f (first value)]
+            (render {:value (apply f (rest value))
+                     :form form}))
+
+          (let [f (or (:kindly/f value)
+                      (-> note :kindly/options :kindly/f))]
+            (render {:value (f (dissoc value :kindly/f))
+                     :form form})))]
+
+    (assoc note
+           :hiccup (:hiccup new-note))))
+
