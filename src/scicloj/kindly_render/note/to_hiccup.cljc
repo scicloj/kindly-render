@@ -166,8 +166,8 @@
        (from-markdown/to-hiccup)
        (assoc note :hiccup)))
 
-(defmethod render-advice :kind/var
-  [{:keys [value form] :as note}]
+(defmethod render-advice :kind/var [{:keys [value form] :as note}]
+  (def value value)
   (let [sym (second value)
         s (str "#'" (str *ns*) "/" sym)]
     (assoc note
