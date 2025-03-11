@@ -1,6 +1,5 @@
 (ns scicloj.kindly-render.note.to-hiccup-js
-  (:require [clojure.pprint :as pprint]
-            [clojure.string :as str]
+  (:require [clojure.string :as str]
             [clojure.edn :as edn]
             [scicloj.kindly-render.shared.walk :as walk]
             [scicloj.kindly-render.shared.util :as util]
@@ -34,14 +33,6 @@
   (->> (vega value)
        (assoc note :hiccup)))
 
-(defn format-code [form]
-  (binding [pprint/*print-pprint-dispatch* pprint/code-dispatch]
-    (with-out-str (pprint/pprint form))))
-
-(defn scittle [forms]
-  [:script {:type "application/x-scittle"}
-   (str/join \newline (map format-code forms))])
-
 (def ^:dynamic *id-counter*
   "starting id for id generation,
   for consistent ids consider binding to 0 per html page"
@@ -60,9 +51,9 @@
 (defmethod render-advice :kind/reagent [{:as note :keys [value]}]
   (->> (let [id (gen-id)]
          [:div {:id id}
-          (scittle [(list 'dom/render
-                          (if (vector? value) value [value])
-                          (list 'js/document.getElementById id))])])
+          (util/scittle [(list 'dom/render
+                               (if (vector? value) value [value])
+                               (list 'js/document.getElementById id))])])
        (assoc note :hiccup)))
 
 (defmethod render-advice :kind/scittle [{:as note :keys [form code value]}]
@@ -75,7 +66,7 @@
                            (nil? form))
                      (if (vector? value) value [value])
                      (if (vector? form) form [form]))]
-         (scittle forms))
+         (util/scittle forms))
        (assoc note :hiccup)))
 
 (defmethod render-advice :kind/portal [{:keys [value] :as note}]
