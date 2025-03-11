@@ -1,9 +1,12 @@
 (ns scicloj.kindly-render.note.to-hiccup
   (:require [clojure.pprint :as pprint]
             [clojure.string :as str]
+            [clojure.data.codec.base64 :as b64]
             [scicloj.kindly-render.shared.walk :as walk]
             [scicloj.kindly-render.shared.util :as util]
-            [scicloj.kindly-render.shared.from-markdown :as from-markdown]))
+            [scicloj.kindly-render.shared.from-markdown :as from-markdown])
+  (:import [javax.imageio ImageIO]) 
+  )
 
 (defmulti render-advice :kind)
 
@@ -57,11 +60,20 @@
   (->> (pprint-block value)
        (assoc note :hiccup)))
 
-(defmethod render-advice :kind/image [{:as note :keys [value]}]
-  (->> (if (string? value)
-         [:img {:src value}]
-         [:div "Image kind not implemented"])
-       (assoc note :hiccup)))
+(defmethod render-advice :kind/image
+  [{:as note :keys [value]}]
+  (let [out (io/java.io.ByteArrayOutputStream.)
+        v
+        (if (sequential? value)
+          (first value)
+          value)
+        _ (ImageIO/write v "png" out)
+        hiccup [:img {:src (str "data:image/png;base64,"
+                                (-> out .toByteArray b64/encode String.))}]]
+
+    (assoc note
+           :hiccup hiccup)))
+
 
 ;; TODO: this is problematic because it creates files
 #_(defmethod render-advice :kind/image [{:keys [value]}]
@@ -86,26 +98,30 @@
 
 ;; Data types that can be recursive
 
-(defmethod render-advice :kind/vector [{:as note :keys [value]}]
-  (walk/render-data-recursively note {:class "kind-vector"} value render))
+(defmethod render-advice :kind/vector [{:as note :keys [value render-fn]}]
+  (walk/render-data-recursively note {:class "kind-vector"} value render-fn))
 
-(defmethod render-advice :kind/map [{:as note :keys [value]}]
+(defmethod render-advice :kind/map [{:as note :keys [value render-fn]}]
   ;; kindly.css puts kind-map in a grid
-  (walk/render-data-recursively note {:class "kind-map"} (apply concat value) render))
+  (walk/render-data-recursively note {:class "kind-map"} (apply concat value) render-fn))
 
-(defmethod render-advice :kind/set [{:as note :keys [value]}]
-  (walk/render-data-recursively note {:class "kind-set"} value render))
+(defmethod render-advice :kind/set [{:as note :keys [value render-fn]}]
+  (walk/render-data-recursively note {:class "kind-set"} value render-fn))
 
-(defmethod render-advice :kind/seq [{:as note :keys [value]}]
-  (walk/render-data-recursively note {:class "kind-seq"} value render))
+(defmethod render-advice :kind/seq [{:as note :keys [value render-fn]}]
+  (walk/render-data-recursively note {:class "kind-seq"} value render-fn))
 
 ;; Special data type hiccup that needs careful expansion
 
-(defmethod render-advice :kind/hiccup [note]
-  (walk/render-hiccup-recursively note render))
+(defmethod render-advice :kind/hiccup [{:as note :keys [render-fn]}]
+  (walk/render-hiccup-recursively note render-fn))
 
-(defmethod render-advice :kind/table [note]
-  (walk/render-table-recursively note render))
+(defmethod render-advice :kind/table [{:as note :keys [render-fn]}]
+  (if (contains?
+       (->> note :advice (map first) set)
+       :kind/dataset)
+    (render (assoc note :kind :kind/dataset))
+    (walk/render-table-recursively note render-fn)))
 
 (defmethod render-advice :kind/video [{:keys [value] :as note}]
   
@@ -149,3 +165,28 @@
        (str/join \newline)
        (from-markdown/to-hiccup)
        (assoc note :hiccup)))
+
+(defmethod render-advice :kind/var
+  [{:keys [value form] :as note}]
+  (let [sym (second value)
+        s (str "#'" (str *ns*) "/" sym)]
+    (assoc note
+           :hiccup s)))
+
+(defmethod render-advice :kind/fn
+  [{:keys [value form render-fn] :as note}]
+
+  (let [new-note
+        (if (vector? value)
+          (let [f (first value)]
+            (render-fn {:value (apply f (rest value))
+                     :form form}))
+
+          (let [f (or (:kindly/f value)
+                      (-> note :kindly/options :kindly/f))]
+            (render-fn {:value (f (dissoc value :kindly/f))
+                     :form form})))]
+
+    (assoc note
+           :hiccup (:hiccup new-note))))
+
