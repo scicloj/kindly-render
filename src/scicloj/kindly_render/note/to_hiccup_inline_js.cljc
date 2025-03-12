@@ -333,8 +333,6 @@
  (defmethod render-advice :default [note]
    (to-hiccup/render-advice note))
    
-
-
  (defmethod render-advice :kind/plotly [note]
    (render-js note  plotly->hiccup))
 
@@ -353,8 +351,7 @@
  (defmethod render-advice :kind/reagent [note]
    (render-js note  reagent->hiccup))
 
- (defmethod render-advice :kind/portal
-   [note]
+ (defmethod render-advice :kind/portal [note]
    (render-js note portal->hiccup))
 
  (defmethod render-advice :kind/vega-lite [note]
@@ -365,10 +362,8 @@
  (defmethod render-advice :kind/vega [note]
    (render-js note  vega->hiccup))
 
- (defmethod render-advice :kind/tex
-   [note]
+ (defmethod render-advice :kind/tex [note]
    (render-js note tex->hiccup))
-
 
  (defmethod render-advice :kind/code [note]
    (to-hiccup/render note))
@@ -400,8 +395,6 @@
  
  (defmethod render-advice :kind/seq [note]
    (recursives/render-seq note render))
- 
- ;; Special data type hiccup that needs careful expansion
  
  (defmethod render-advice :kind/hiccup [note]
    (recursives/render-hiccup note render))
