@@ -1,11 +1,14 @@
 (ns scicloj.kindly-render.note.to-hiccup
-  (:require [clojure.pprint :as pprint]
-            [clojure.string :as str]
-            [clojure.data.codec.base64 :as b64]
-            [scicloj.kindly-render.shared.walk :as walk]
-            [scicloj.kindly-render.shared.util :as util]
-            [scicloj.kindly-render.shared.from-markdown :as from-markdown])
-  (:import [javax.imageio ImageIO]) 
+  (:require
+   [clojure.data.codec.base64 :as b64]
+   [clojure.pprint :as pprint]
+   [clojure.string :as str]
+   [scicloj.kindly-render.shared.from-markdown :as from-markdown]
+   [scicloj.kindly-render.shared.recursives :as recursives]
+   [scicloj.kindly-render.shared.util :as util]
+   [scicloj.kindly-render.shared.walk :as walk])
+  (:import
+   [javax.imageio ImageIO]) 
   )
 
 (defmulti render-advice :kind)
@@ -98,30 +101,25 @@
 
 ;; Data types that can be recursive
 
-(defmethod render-advice :kind/vector [{:as note :keys [value render-fn]}]
-  (walk/render-data-recursively note {:class "kind-vector"} value render-fn))
+(defmethod render-advice :kind/vector [note]
+  (recursives/render-vector note render))
 
-(defmethod render-advice :kind/map [{:as note :keys [value render-fn]}]
-  ;; kindly.css puts kind-map in a grid
-  (walk/render-data-recursively note {:class "kind-map"} (apply concat value) render-fn))
+(defmethod render-advice :kind/map [note]
+  (recursives/render-map note render))
 
-(defmethod render-advice :kind/set [{:as note :keys [value render-fn]}]
-  (walk/render-data-recursively note {:class "kind-set"} value render-fn))
+(defmethod render-advice :kind/set [note]
+  (recursives/render-set note render))
 
-(defmethod render-advice :kind/seq [{:as note :keys [value render-fn]}]
-  (walk/render-data-recursively note {:class "kind-seq"} value render-fn))
+(defmethod render-advice :kind/seq [note]
+  (recursives/render-seq note render))
 
 ;; Special data type hiccup that needs careful expansion
 
-(defmethod render-advice :kind/hiccup [{:as note :keys [render-fn]}]
-  (walk/render-hiccup-recursively note render-fn))
+(defmethod render-advice :kind/hiccup [note]
+  (recursives/render-hiccup note render))
 
-(defmethod render-advice :kind/table [{:as note :keys [render-fn]}]
-  (if (contains?
-       (->> note :advice (map first) set)
-       :kind/dataset)
-    (render (assoc note :kind :kind/dataset))
-    (walk/render-table-recursively note render-fn)))
+(defmethod render-advice :kind/table [{:as note :keys [render]}]
+  (recursives/render-table note render))
 
 (defmethod render-advice :kind/video [{:keys [value] :as note}]
   
@@ -173,20 +171,6 @@
     (assoc note
            :hiccup s)))
 
-(defmethod render-advice :kind/fn
-  [{:keys [value form render-fn] :as note}]
-
-  (let [new-note
-        (if (vector? value)
-          (let [f (first value)]
-            (render-fn {:value (apply f (rest value))
-                     :form form}))
-
-          (let [f (or (:kindly/f value)
-                      (-> note :kindly/options :kindly/f))]
-            (render-fn {:value (f (dissoc value :kindly/f))
-                     :form form})))]
-
-    (assoc note
-           :hiccup (:hiccup new-note))))
+(defmethod render-advice :kind/fn [note]
+  (recursives/render-kind-fn note render))
 
