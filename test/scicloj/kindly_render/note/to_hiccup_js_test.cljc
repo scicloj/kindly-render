@@ -8,3 +8,4 @@
 (deftest render-test
   (is (= []
          (:hiccup (to-hiccup-js/render (dissoc note :hiccup))))))
+

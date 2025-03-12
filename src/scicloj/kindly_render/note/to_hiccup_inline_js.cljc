@@ -5,11 +5,17 @@
    [malli.core :as m]
    [malli.error :as me]
    [scicloj.kindly-render.note.to-hiccup-js :as to-hiccup-js]
+   
    [scicloj.kindly-render.notes.js-deps :as js-deps]
-   [scicloj.kindly-render.shared.walk :as walk])
+   [scicloj.kindly-render.shared.walk :as walk]
+   [scicloj.kind-portal.v1.api :as kind-portal])
   (:import
    [java.security MessageDigest]))
 
+(defn- pr-str-with-meta [value]
+  (binding [*print-meta* true]
+    (pr-str value)))
+ 
 
 (defn- malli-schema-for [kind]
   (m/schema
@@ -271,6 +277,21 @@
                               note)
      [:div {:id (str id)}]]))
 
+(defn portal->hiccup [note]
+  [:div
+   (require-deps-and-render
+    (->> {:value note}
+         kind-portal/prepare
+         pr-str-with-meta
+         pr-str
+         (format "portal_api.embed().renderOutputItem(
+                  {'mime': 'x-application/edn',
+                   'text': (() => %s)}
+                  , currentScript_XXXXX.parentElement);"))
+    note
+    )])
+
+
 (defn render-js
   "Renders JavaScript-based visualizations by converting the visualization data into Hiccup format and preparing it for display in Clojupyter.  
   
@@ -326,14 +347,14 @@
 (defmethod render-advice :kind/reagent [note]
   (render-js note  reagent->hiccup))
 
-
-
+(defmethod render-advice :kind/portal
+  [note]
+  (render-js note portal->hiccup))
 
 (defmethod render-advice :kind/vega-lite [note]
   (render-js
    (assoc note :kind :kind/vega)
    vega->hiccup))
-
 
 (defmethod render-advice :kind/vega [note]
   (render-js note  vega->hiccup))
