@@ -151,20 +151,6 @@
       [(require-js (last js-deps)
                    render-cmd)])))
 
- (defn require-deps-and-render
-   "Generates a Hiccup representation to load the a JS library and execute a rendering command after it has been loaded.  
-  
-   **Parameters:**  
-  
-   - `render-cmd` (String): The JavaScript command to execute after js has been loaded.  
-  
-   **Returns:**  
-  
-   - A Hiccup vector that includes a `<script>` tag loading Plotly.js and executing the provided rendering command."
-   [render-cmd note]
-   (render-with-js note render-cmd))
-
-
  (defn highcharts->hiccup
    "Converts Highcharts chart data into a Hiccup vector that can render the chart within a Jupyter notebook using the Highcharts library. It sets up a `<div>` container and includes the necessary scripts to render the chart.  
   
@@ -178,9 +164,9 @@
    [note]
    [:div {:style {:height "500px"
                   :width "500px"}}
-    (require-deps-and-render (format "Highcharts.chart(currentScript_XXXXX.parentElement, %s);"
-                                     (util/json-str (:value note)))
-                             note)])
+    (render-with-js note
+                    (format "Highcharts.chart(currentScript_XXXXX.parentElement, %s);"
+                            (util/json-str (:value note))))])
 
  (defn plotly->hiccup
    "Converts Plotly chart data into a Hiccup vector that can render the chart within a Jupyter notebook using the Plotly library.  
@@ -196,15 +182,17 @@
 
    [:div {:style {:height "500px"
                   :width "500px"}}
-    (require-deps-and-render (format "Plotly.newPlot(currentScript_XXXXX.parentElement, %s);"
-                                     (util/json-str (:value note)))
-                             note)])
+    (render-with-js
+     note
+     (format "Plotly.newPlot(currentScript_XXXXX.parentElement, %s);"
+             (util/json-str (:value note))))])
 
  (defn vega->hiccup [note]
    [:div
-    (require-deps-and-render (format "vegaEmbed(currentScript_XXXXX.parentElement, %s);"
-                                     (util/json-str (:value note)))
-                             note)])
+    (render-with-js
+     note
+     (format "vegaEmbed(currentScript_XXXXX.parentElement, %s);"
+             (util/json-str (:value note))))])
 
  (defn cytoscape>hiccup
    "Converts Cytoscape graph data into a Hiccup vector that can render the graph within a Jupyter notebook using the Cytoscape.js library.  
@@ -219,12 +207,13 @@
    [note]
    [:div {:style {:height "500px"
                   :width "500px"}}
-    (require-deps-and-render (format "  
+    (render-with-js
+     note
+     (format "  
                             value = %s;  
                             value['container'] = currentScript_XXXXX.parentElement;  
                             cytoscape(value);"
-                                     (util/json-str (:value note)))
-                             note)])
+             (util/json-str (:value note))))])
 
  (defn echarts->hiccup
    "Converts ECharts chart data into a Hiccup vector that can render the chart within a Jupyter notebook using the ECharts library.  
@@ -239,29 +228,24 @@
    [note]
    [:div {:style {:height "500px"
                   :width "500px"}}
-    (require-deps-and-render (format "  
+    (render-with-js note
+                    (format "  
                                     var myChart = echarts.init(currentScript_XXXXX.parentElement);  
                                     myChart.setOption(%s);"
-                                     (util/json-str (:value note)))
-
-                             note)])
+                            (util/json-str (:value note))))])
 
  (defn tex->hiccup [note]
    [:div
-    (require-deps-and-render (format
-                              "katex.render(%s, currentScript_XXXXX.parentElement, {throwOnError: false});"
-                              (util/json-str (format "$%s$" (first (:value note)))))
-                             note)])
+    (render-with-js note
+                    (format
+                     "katex.render(%s, currentScript_XXXXX.parentElement, {throwOnError: false});"
+                     (util/json-str (format "$%s$" (first (:value note))))))])
 
 
- (defn scittle->hiccup [note]
-   [:div
-    (require-deps-and-render (format "scittle.core.eval_string('%s')" (str (:value note)))
-                             note)])
 
  (defn scittle->hiccup-2 [note]
    (concat
-    (require-deps-and-render "" note)
+    (render-with-js note "" )
     [(->
       (to-hiccup-js/render {:value (:value note)})
       :hiccup)]
@@ -272,15 +256,18 @@
    (let [id (gensym)]
      [:div
 
-      (require-deps-and-render (format "scittle.core.eval_string('(require (quote [reagent.dom]))(reagent.dom/render %s (js/document.getElementById \"%s\"))')"
-                                       (str (:value note))
-                                       (str id))
-                               note)
+      
+      (render-with-js
+       note
+       (format "scittle.core.eval_string('(require (quote [reagent.dom]))(reagent.dom/render %s (js/document.getElementById \"%s\"))')"
+               (str (:value note))
+               (str id)))
       [:div {:id (str id)}]]))
 
  (defn portal->hiccup [note]
    [:div
-    (require-deps-and-render
+    (render-with-js
+     note
      (->> {:value note}
           kind-portal/prepare
           pr-str-with-meta
@@ -288,8 +275,7 @@
           (format "portal_api.embed().renderOutputItem(
                   {'mime': 'x-application/edn',
                    'text': (() => %s)}
-                  , currentScript_XXXXX.parentElement);"))
-     note)])
+                  , currentScript_XXXXX.parentElement);")))])
 
 
  (defn render-js
