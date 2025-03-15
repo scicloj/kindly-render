@@ -405,7 +405,7 @@
                                         :row-vectors (take 5 people-as-vectors)})}))]
 
 
-    (is (= [:thead [:tr ":preferred-language" ":age"]] (-> hiccup (nth 2))))
+    (is (= [:thead [:tr [:th ":preferred-language"] [:th ":age"]]] (-> hiccup (nth 2))))
     (is (= 6 (-> hiccup  (nth 3) count))))
 
 
@@ -426,7 +426,7 @@
          
          :hiccup
          )]
-    (is (= [:thead [:tr ":preferred-language" ":age"]] (-> hiccup (nth 2))))
+    (is (= [:thead [:tr [:th  ":preferred-language"] [:th ":age"]]] (-> hiccup (nth 2))))
     (is (= 6 (-> hiccup  (nth 3) count)))
     )
 
@@ -436,7 +436,7 @@
          
          
          :hiccup)]
-    (is (= [:thead [:tr ":preferred-language" ":age"]] (-> hiccup (nth 2))))
+    (is (= [:thead [:tr [:th  ":preferred-language"] [:th ":age"]]] (-> hiccup (nth 2))))
     (is (= 6 (-> hiccup  (nth 3) count))))
   
   (let [hiccup
@@ -450,16 +450,18 @@
     (is (= 6 (-> hiccup  (nth 3) count)))))
 
 
-(is (= [:tr [:td "5"] [:td ":C"]]
-     (->
-      (to-hiccup-inline-js/render  
-       {:value 
-        (kind/table {:x (range 6)
-                     :y [:A :B :C :A :B :C]})})
-      :hiccup
-      (nth 3)
-      (nth 6)
-      )))
+(let [hiccup
+      (:hiccup
+       (to-hiccup-inline-js/render
+        {:value
+         (kind/table {:x (range 6)
+                      :y [:A :B :C :A :B :C]})}))
+      ]
+  (is (= [:tr [:td "5"] [:td ":C"]]
+         (-> hiccup
+             (nth 3)
+             (nth 6)
+             ))))
 ;;=> 
   
        ;https://github.com/scicloj/kindly-render/issues/38

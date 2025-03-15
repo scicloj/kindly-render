@@ -193,7 +193,7 @@
         (assoc :hiccup [:table
                         [:thead (into [:tr]
                                       (for [header header-notes]
-                                        (:hiccup header)))]
+                                        [:th (:hiccup header)]))]
                         (into [:tbody]
                               (for [row row-notes]
                                 (into [:tr]
