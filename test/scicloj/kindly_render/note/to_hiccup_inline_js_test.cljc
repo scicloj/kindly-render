@@ -623,3 +623,15 @@
           (to-hiccup-inline-js/render {:form '(+ 1 1)})
           :hiccup))))
   
+(deftest video-src 
+  (is (= "https://www.sample-videos.com/video321/mp4/240/big_buck_bunny_240p_30mb.mp4"
+         (-> 
+          (to-hiccup-inline-js/render {:value 
+                                       (kind/video 
+                                        {:src "https://www.sample-videos.com/video321/mp4/240/big_buck_bunny_240p_30mb.mp4"})})
+          :hiccup
+          (nth 2)
+          second
+          :src
+          ))))
+

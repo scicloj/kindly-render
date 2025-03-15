@@ -123,29 +123,37 @@
 
 (defmethod render-advice :kind/video [{:keys [value] :as note}]
   
-  (let [{:keys [youtube-id
+  (let [{:keys [src
+                youtube-id
                 iframe-width
                 iframe-height
                 allowfullscreen
                 embed-options]
          :or {allowfullscreen true}}
         value]
-
-    (->> [:iframe
-          (merge
-           (when iframe-height
-             {:height iframe-height})
-           (when iframe-width
-             {:width iframe-width})
-           {:src             (str "https://www.youtube.com/embed/"
-                                  youtube-id
-                                  (some->> embed-options
-                                           (map (fn [[k v]]
-                                                  (format "%s=%s" (name k) v)))
-                                           (str/join "&")
-                                           (str "?")))
-            :allowfullscreen allowfullscreen})]
-         (assoc note :hiccup))))
+  
+    (merge note 
+           (cond
+    ;; A video file
+             src {:hiccup [:video {:controls ""}
+                           [:source {:src src
+                                     :type "video/mp4"}]]}
+    ;; A youtube video
+             youtube-id {:hiccup [:iframe
+                                  (merge
+                                   (when iframe-height
+                                     {:height iframe-height})
+                                   (when iframe-width
+                                     {:width iframe-width})
+                                   {:src (str "https://www.youtube.com/embed/"
+                                              youtube-id
+                                              (some->> embed-options
+                                                       (map (fn [[k v]]
+                                                              (format "%s=%s" (name k) v)))
+                                                       (str/join "&")
+                                                       (str "?")))
+                                    :allowfullscreen allowfullscreen})]}))
+    ))
 
 #?(:clj
    (defmethod render-advice :kind/dataset [{:as note :keys [value kindly/options]}]
