@@ -159,8 +159,6 @@
 ;;   (->> people-as-maps
 ;;        (mapv (juxt :preferred-language :age))))
 
-;; (def people-as-dataset
-;;   (tc/dataset people-as-maps))
 
 ;; (defn fetch-dataset [dataset-name]
 ;;   (-> dataset-name
@@ -178,7 +176,7 @@
 
 
 (deftest kind-vega-lite-works
-  (is (= 
+  (is (=
        true
        (str/includes?
         (->
@@ -187,25 +185,22 @@
          (nth 2)
          (nth 2)
          second)
-        "vega")
-       )))
+        "vega"))))
 
 ;; ;(to-hiccup-inline-js/render {:form })
 
 
 (deftest kind-vega-works
 
-    (is (= true
-           (str/includes?
-            (->
-             (to-hiccup-inline-js/render {:value (kind/vega vega-spec)})
-             :hiccup
-             (nth 2)
-             (nth 2)
-             second)
-            "vega"))
-
-        ))
+  (is (= true
+         (str/includes?
+          (->
+           (to-hiccup-inline-js/render {:value (kind/vega vega-spec)})
+           :hiccup
+           (nth 2)
+           (nth 2)
+           second)
+          "vega"))))
 
 
 
@@ -224,7 +219,7 @@
          (str/starts-with?
           (->
            (to-hiccup-inline-js/render {:value (kind/plotly plotly-data {:style {:width 100
-                                                                                :height 100}})})
+                                                                                 :height 100}})})
            :hiccup
            (nth 2)
            first
@@ -232,7 +227,7 @@
           "  \n  var"))))
 
 (deftest kind-reagent-works
-  (is (= true 
+  (is (= true
          (str/includes?
           (->
            (to-hiccup-inline-js/render {:value
@@ -276,7 +271,7 @@
           "leaflet.js"))))
 
 (deftest kind-tex-works
-  (is 
+  (is
    (str/includes?
     (->
      (to-hiccup-inline-js/render {:value (kind/tex "x^2 + y^2 = z^2")})
@@ -287,28 +282,27 @@
 
 
 (deftest kind-portal-works
-  (is 
+  (is
    (str/includes?
     (->
-     (to-hiccup-inline-js/render { :value 
+     (to-hiccup-inline-js/render {:value
                                   (kind/portal
-                                   {:x (range 3)})}
-                                 )
+                                   {:x (range 3)})})
      :hiccup
      (nth 2)
      first
      second)
     ":portal.viewer/inspector")))
-       
-       
+
+
 (deftest kind-scittle-works
-  (is 
+  (is
    (str/includes?
     (->
      (to-hiccup-inline-js/render {:value (kind/scittle '(.log js/console "hello"))})
      :hiccup
      (nth 3))
-    ".log js/console")) 
+    ".log js/console"))
 
   (is (= [:script {:type "application/x-scittle", :class "kind-scittle"} "(print \"hello\")\n"]
          (->
@@ -320,12 +314,12 @@
          (->
           (to-hiccup-inline-js/render {:value (kind/scittle '(print "hello"))})
           :hiccup
-          (nth 4)))) )
+          (nth 4)))))
 
 
 
 (deftest kind-cytoscape-works
-  (is 
+  (is
    (str/includes?
     (->
      (to-hiccup-inline-js/render {:value ^:kind/cytoscape cs})
@@ -342,10 +336,10 @@
    (str/starts-with?
     (->
      (to-hiccup-inline-js/render {:value
-                        (-> (rdatasets/datasets-iris)
-                            (plotly/layer-point
-                             {:=x :sepal-length
-                              :=y :sepal-width}))})
+                                  (-> (rdatasets/datasets-iris)
+                                      (plotly/layer-point
+                                       {:=x :sepal-length
+                                        :=y :sepal-width}))})
      :hiccup
      (nth 2)
      first
@@ -372,9 +366,9 @@
 
        (->
         (to-hiccup-inline-js/render {:value
-                           (kind/md
+                                     (kind/md
 
-                            "
+                                      "
 * This is [markdown](https://www.markdownguide.org/).
   * *Isn't it??*
     * Here is **some more** markdown.
@@ -388,7 +382,7 @@
   (is (= "<div style='height:40px; width:40px; background:purple'></div>"
          (->
           (to-hiccup-inline-js/render {:value (kind/html
-                                     "<div style='height:40px; width:40px; background:purple'></div>")})
+                                               "<div style='height:40px; width:40px; background:purple'></div>")})
           :hiccup))))
 
 
@@ -404,10 +398,9 @@
   (let [hiccup
         (:hiccup
          (to-hiccup-inline-js/render {:value
-                            (kind/table
-                             {:column-names [:preferred-language :age]
-                              :row-vectors (take 5 people-as-vectors)})
-                            }))]
+                                      (kind/table
+                                       {:column-names [:preferred-language :age]
+                                        :row-vectors (take 5 people-as-vectors)})}))]
 
 
     (is (= [:thead [:tr ":preferred-language" ":age"]] (-> hiccup (nth 2))))
@@ -418,210 +411,215 @@
   (is (= :table
          (->
           (to-hiccup-inline-js/render {:value (-> people-as-dataset
-                                        (kind/table))})
+                                                  (kind/table))})
           :hiccup
           (nth 3)
           first)))
 
-       ;https://github.com/scicloj/kindly-render/issues/29
-       ;https://github.com/scicloj/kindly-render/issues/30
+  (let [hiccup
+        (-> 
+         (to-hiccup-inline-js/render {:value
+                                      (kind/table
+                                       {:row-maps (take 5 people-as-maps)})})
+         
+         :hiccup
+         )]
+    (is (= [:thead [:tr ":preferred-language" ":age"]] (-> hiccup (nth 2))))
+    (is (= 6 (-> hiccup  (nth 3) count)))
+    ))
+
        ;https://github.com/scicloj/kindly-render/issues/38
-
+                               
        ;; (k/kind-eval '(kind/table (take 5 people-as-vectors)))
-
+                               
        ;; (k/kind-eval '(kind/table (take 5 people-as-maps)))
-
+                               
 
        ;; (k/kind-eval '(kind/table {:x (range 6)
        ;;                            :y [:A :B :C :A :B :C]}))
-
+                               
        ;; (k/kind-eval '(-> people-as-maps
        ;;                   tc/dataset
        ;;                   (kind/table {:use-datatables true})))
-
+                               
        ;; (k/kind-eval '(-> people-as-dataset
        ;;                   (kind/table {:use-datatables true})))
-
+                               
 
        ;; (k/kind-eval '(-> people-as-dataset
        ;;                   (kind/table {:element/max-height "300px"})))
-
+                               
        ;; (k/kind-eval '(-> people-as-maps
        ;;                   tc/dataset
        ;;                   (kind/table {:use-datatables true})))
-
+                               
        ;; (k/kind-eval '(-> people-as-dataset
        ;;                   (kind/table {:use-datatables true})))
-
+                               
        ;; (k/kind-eval '(-> people-as-dataset
        ;;                   (kind/table {:use-datatables true
        ;;                                :datatables {:scrollY 200}})))
-  )
+                               
 
 
-(deftest kind-hidden-returns-nothing
-  (is (= nil
-         (->
-          (to-hiccup-inline-js/render {:value (kind/hidden "(+ 1 1)")})
-          :hiccup))))
+  (deftest kind-hidden-returns-nothing
+    (is (= nil
+           (->
+            (to-hiccup-inline-js/render {:value (kind/hidden "(+ 1 1)")})
+            :hiccup))))
 
 
 
-(deftest nil-return-nil
-  (is (= ""
+  (deftest nil-return-nil
+    (is (= ""
+           (:hiccup
+            (to-hiccup-inline-js/render {:value nil})))))
+
+  (deftest kind-map-works
+    (is (=
+         [:div
+          {:class "kind-map"}
+          [:div {:style {:border "1px solid grey", :padding "2px"}} ":a"]
+          [:div {:style {:border "1px solid grey", :padding "2px"}} "1"]]
          (:hiccup
-          (to-hiccup-inline-js/render {:value nil})))))
+          (to-hiccup-inline-js/render {:value (kind/map {:a 1})})))))
 
-(deftest kind-map-works
-  (is (=
-       [:div
-        {:class "kind-map"}
-        [:div {:style {:border "1px solid grey", :padding "2px"}} ":a"]
-        [:div {:style {:border "1px solid grey", :padding "2px"}} "1"]]
-       (:hiccup
-        (to-hiccup-inline-js/render {:value (kind/map {:a 1})
-                                     })))))
+  (to-hiccup-inline-js/render {:form '(kind/seq [1 2 3])})
 
-(to-hiccup-inline-js/render {:form '(kind/seq [1 2 3])})
-
-(deftest kind-image-works
-  (is
-   (str/starts-with?
-    (-> (to-hiccup-inline-js/render {:value image})
-        :hiccup
-        second
-        :src)
-    "data:image/png;base64,")))
-
-
-(deftest nested-image-rendering-is-supported
-  (is
-   (str/starts-with?
-    (->
-     (to-hiccup-inline-js/render {:value
-                        (kind/hiccup [:div.clay-limit-image-width
-                                      raw-image])
-                        :render-fn to-hiccup-js/render})
-     :hiccup
-     (nth 2)
-     second
-     :src)
-
-    "data:image/png;base64,"))
-
-  (is
-   (str/starts-with?
-    (->
-     (to-hiccup-inline-js/render {:value
-                        [raw-image raw-image]
-                        :render-fn to-hiccup-js/render})
-     :hiccup
-     (nth 2)
-     (nth 2)
-     second
-     :src)
-    "data:image/png;base64,")))
-
-
-
-(deftest kind-var-works
-
-  (is (= "#'user/a"
-         (->
-          (to-hiccup-inline-js/render {:value (kind/var '(def a 1))})
-          :hiccup))))
-
-
-
-(deftest kind-pprint-works
-  (is (=
-       "{0 1,\n 2 3,\n 4 5,\n 6 7,\n 8 9,\n 10 11,\n 12 13,\n 14 15,\n 16 17,\n 18 19,\n 20 21,\n 22 23,\n 24 25,\n 26 27,\n 28 29}\n"
-
-       (->
-        (to-hiccup-inline-js/render {:value (->> (range 30)
-                                       (apply array-map)
-                                       kind/pprint)})
-        :hiccup
-        (nth 2)
-        second
-
-        (nth 2)))))
-
-
-(deftest kind-video-is-working
-  (is (= [:iframe {:src "https://www.youtube.com/embed/DAQnvAgBma8",
-                   :allowfullscreen true,
-                   :class "kind-video"}]
-         (:hiccup (to-hiccup-inline-js/render {:value (kind/video
-                                             {:youtube-id "DAQnvAgBma8"})})))))
-
-(deftest kind-fn-works-as-expected
-
-  (is (= "3"
-         (->
-          (to-hiccup-inline-js/render {:value
-                                       (kind/fn
-                                         {:kindly/f (fn [{:keys [x y]}]
-                                                      (+ x y))
-                                          :x 1
-                                          :y 2})
-                                       })
-          :hiccup)))
-
-
-  (is (= [:p "_unnamed [3 2]:"]
-         (->
-          (to-hiccup-inline-js/render {:value
-                                       (kind/fn
-                                         {:x (range 3)
-                                          :y (repeatedly 3 rand)}
-                                         {:kindly/f tc/dataset})
-                                       })
+  (deftest kind-image-works
+    (is
+     (str/starts-with?
+      (-> (to-hiccup-inline-js/render {:value image})
           :hiccup
-          (nth 2))))
+          second
+          :src)
+      "data:image/png;base64,")))
 
 
-  (is (= "3"
+  (deftest nested-image-rendering-is-supported
+    (is
+     (str/starts-with?
+      (->
+       (to-hiccup-inline-js/render {:value
+                                    (kind/hiccup [:div.clay-limit-image-width
+                                                  raw-image])
+                                    :render-fn to-hiccup-js/render})
+       :hiccup
+       (nth 2)
+       second
+       :src)
+
+      "data:image/png;base64,"))
+
+    (is
+     (str/starts-with?
+      (->
+       (to-hiccup-inline-js/render {:value
+                                    [raw-image raw-image]
+                                    :render-fn to-hiccup-js/render})
+       :hiccup
+       (nth 2)
+       (nth 2)
+       second
+       :src)
+      "data:image/png;base64,")))
+
+
+
+  (deftest kind-var-works
+
+    (is (= "#'user/a"
+           (->
+            (to-hiccup-inline-js/render {:value (kind/var '(def a 1))})
+            :hiccup))))
+
+
+
+  (deftest kind-pprint-works
+    (is (=
+         "{0 1,\n 2 3,\n 4 5,\n 6 7,\n 8 9,\n 10 11,\n 12 13,\n 14 15,\n 16 17,\n 18 19,\n 20 21,\n 22 23,\n 24 25,\n 26 27,\n 28 29}\n"
+
          (->
-          (to-hiccup-inline-js/render {:value
-                                       (kind/fn
-                                         [+ 1 2])
-                                       })
-
-          :hiccup)))
-
-
-
-  (is (= [:p "_unnamed [3 2]:"]
-         (->
-          (to-hiccup-inline-js/render {:value
-                                       (kind/fn
-                                         {:kindly/f tc/dataset
-                                          :x (range 3)
-                                          :y (repeatedly 3 rand)})
-                                       })
-
+          (to-hiccup-inline-js/render {:value (->> (range 30)
+                                                   (apply array-map)
+                                                   kind/pprint)})
           :hiccup
+          (nth 2)
+          second
+
           (nth 2)))))
 
 
-(deftest options-are-not-checked
-  (is (= ""
-         (->
-          (to-hiccup-inline-js/render {:value (kind/html "" {:invalid-option 1})})
-          :hiccup))))
+  (deftest kind-video-is-working
+    (is (= [:iframe {:src "https://www.youtube.com/embed/DAQnvAgBma8",
+                     :allowfullscreen true,
+                     :class "kind-video"}]
+           (:hiccup (to-hiccup-inline-js/render {:value (kind/video
+                                                         {:youtube-id "DAQnvAgBma8"})})))))
+
+  (deftest kind-fn-works-as-expected
+
+    (is (= "3"
+           (->
+            (to-hiccup-inline-js/render {:value
+                                         (kind/fn
+                                           {:kindly/f (fn [{:keys [x y]}]
+                                                        (+ x y))
+                                            :x 1
+                                            :y 2})})
+            :hiccup)))
 
 
-(deftest simple-kinds-with-form
+    (is (= [:p "_unnamed [3 2]:"]
+           (->
+            (to-hiccup-inline-js/render {:value
+                                         (kind/fn
+                                           {:x (range 3)
+                                            :y (repeatedly 3 rand)}
+                                           {:kindly/f tc/dataset})})
+            :hiccup
+            (nth 2))))
 
-  (is (= "2"
-         (->
-          (to-hiccup-inline-js/render {:form '(+ 1 1)})
-          :hiccup))))
 
-(deftest fragment-as-seq
-  (is (= [:div {:style {:border "1px solid grey", :padding "2px"}} "2"]
-         (-> 
-          (to-hiccup-inline-js/render {:value (kind/fragment (range 3))})
-          :hiccup
-          (nth 4)))))
+    (is (= "3"
+           (->
+            (to-hiccup-inline-js/render {:value
+                                         (kind/fn
+                                           [+ 1 2])})
+
+            :hiccup)))
+
+
+
+    (is (= [:p "_unnamed [3 2]:"]
+           (->
+            (to-hiccup-inline-js/render {:value
+                                         (kind/fn
+                                           {:kindly/f tc/dataset
+                                            :x (range 3)
+                                            :y (repeatedly 3 rand)})})
+
+            :hiccup
+            (nth 2)))))
+
+
+  (deftest options-are-not-checked
+    (is (= ""
+           (->
+            (to-hiccup-inline-js/render {:value (kind/html "" {:invalid-option 1})})
+            :hiccup))))
+
+
+  (deftest simple-kinds-with-form
+
+    (is (= "2"
+           (->
+            (to-hiccup-inline-js/render {:form '(+ 1 1)})
+            :hiccup))))
+
+  (deftest fragment-as-seq
+    (is (= [:div {:style {:border "1px solid grey", :padding "2px"}} "2"]
+           (->
+            (to-hiccup-inline-js/render {:value (kind/fragment (range 3))})
+            :hiccup
+            (nth 4)))))

@@ -146,7 +146,16 @@
 
 (defn render-table-recursively
   [{:as note :keys [value]} render]
-  (let [{:keys [column-names row-vectors]} value
+
+  (def note note)
+  (def value value)
+
+  (let [{:keys [column-names row-vectors row-maps]} value
+_ (def column-names column-names)
+         _ (def row-vectors row-vectors)
+        _ (def row-maps row-maps)
+        column-names (or column-names (keys (first row-maps)))
+        row-vectors (or row-vectors (map vals row-maps))
         header-notes (for [column-name column-names]
                        (render {:value column-name}))
         row-notes (for [row row-vectors]
