@@ -42,20 +42,16 @@
 (defn clojure-code-item [{:keys [hiccup-element]}]
   (fn [string-or-strings]
     (let [strings (->> string-or-strings
-                       in-vector
-                       )]
-      {
-       :hiccup (->> strings
+                       in-vector)]
+      {:hiccup (->> strings
                     (map (fn [s]
                            [:pre
                             [hiccup-element
                              (escape s)]]))
-                    (into [:div]))
-       })))
+                    (into [:div]))})))
 
 (def source-clojure
   (clojure-code-item {:hiccup-element :code.sourceCode.language-clojure.source-clojure.bg-light}))
-
 
 
 
