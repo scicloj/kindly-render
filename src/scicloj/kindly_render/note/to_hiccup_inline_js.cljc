@@ -1,4 +1,6 @@
 (ns scicloj.kindly-render.note.to-hiccup-inline-js
+   "used by clojupyter to render kinds"
+
    (:require
     [clojure.string :as str]
     [malli.core :as m]
@@ -400,6 +402,8 @@
 (defmethod render-advice :kind/dataset [note]
   (to-hiccup/render note))
 
+(defmethod render-advice :kind/fragment [note]
+  (recursives/render-seq note render))
 
 
 

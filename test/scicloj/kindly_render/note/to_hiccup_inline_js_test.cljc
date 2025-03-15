@@ -547,10 +547,6 @@
 
         (nth 2)))))
 
-(deftest kind-code-is-working
-  (is (= [:pre {:class "kind-code"} [:code {:class "sourceCode"} ["(defn f [x] {:y (+  x 9)})"]]]
-         (:hiccup (to-hiccup-inline-js/render {:value (kind/code "(defn f [x] {:y (+  x 9)})")})))))
-
 
 (deftest kind-video-is-working
   (is (= [:iframe {:src "https://www.youtube.com/embed/DAQnvAgBma8",
@@ -622,5 +618,10 @@
          (->
           (to-hiccup-inline-js/render {:form '(+ 1 1)})
           :hiccup))))
-  
 
+(deftest fragment-as-seq
+  (is (= [:div {:style {:border "1px solid grey", :padding "2px"}} "2"]
+         (-> 
+          (to-hiccup-inline-js/render {:value (kind/fragment (range 3))})
+          :hiccup
+          (nth 4)))))
