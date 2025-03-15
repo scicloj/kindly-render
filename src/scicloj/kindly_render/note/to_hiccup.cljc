@@ -24,6 +24,37 @@
          (str value))
        (assoc note :hiccup)))
 
+(defn in-vector [v]
+  (if (sequential? v)
+    v
+    [v]))
+
+(defn escape [string]
+  (-> string
+      (str/escape
+       {\< "&lt;"
+        \> "&gt;"
+        \& "&amp;"
+        \" "&quot;"
+        \' "&apos;"})))
+
+
+(defn clojure-code-item [{:keys [hiccup-element]}]
+  (fn [string-or-strings]
+    (let [strings (->> string-or-strings
+                       in-vector)]
+      {:hiccup (->> strings
+                    (map (fn [s]
+                           [:pre
+                            [hiccup-element
+                             (escape s)]]))
+                    (into [:div]))})))
+
+(def source-clojure
+  (clojure-code-item {:hiccup-element :code.sourceCode.language-clojure.source-clojure.bg-light}))
+
+
+
 (defn block [class x]
   ;; TODO: can the class go on pre instead? for more visibility in the dom
   [:pre [:code {:class class} x]])
@@ -44,7 +75,7 @@
   (blockquote [[:strong channel] (block nil s)]))
 
 (defmethod render-advice :kind/code [{:as note :keys [value]}]
-  (->> (block "sourceCode" value)
+  (->> (:hiccup (source-clojure value))
        (assoc note :hiccup)))
 
 (defmethod render-advice :kind/hidden [note]

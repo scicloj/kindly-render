@@ -28,3 +28,20 @@
         :hiccup))))
 
 
+(deftest video-src
+  (is (= "https://www.sample-videos.com/video321/mp4/240/big_buck_bunny_240p_30mb.mp4"
+         (->
+          (to-hiccup/render {:value
+                             (kind/video
+                              {:src "https://www.sample-videos.com/video321/mp4/240/big_buck_bunny_240p_30mb.mp4"})})
+          :hiccup
+          (nth 2)
+          second
+          :src))))
+
+(deftest kind-code
+  (is ( = [:pre [:code.sourceCode.language-clojure.source-clojure.bg-light "(def f [x] {:y (+ x 9)})"]]
+        (->
+         (to-hiccup/render {:value (kind/code  "(def f [x] {:y (+ x 9)})")})
+         :hiccup
+         (nth 2)))))
