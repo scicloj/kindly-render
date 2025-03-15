@@ -39,4 +39,9 @@
           second
           :src))))
 
-(to-hiccup/render {:value (kind/code  "(def f [x] {:y (+ x 9)})")})
+(deftest kind-code
+  (is ( = [:pre [:code.sourceCode.language-clojure.source-clojure.bg-light "(def f [x] {:y (+ x 9)})"]]
+        (->
+         (to-hiccup/render {:value (kind/code  "(def f [x] {:y (+ x 9)})")})
+         :hiccup
+         (nth 2)))))

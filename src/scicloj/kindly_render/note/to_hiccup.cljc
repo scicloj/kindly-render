@@ -39,37 +39,25 @@
         \' "&apos;"})))
 
 
-(defn clojure-code-item [{:keys [tag hiccup-element md-class]}]
+(defn clojure-code-item [{:keys [hiccup-element]}]
   (fn [string-or-strings]
     (let [strings (->> string-or-strings
                        in-vector
-                       ;; (map escape)
                        )]
-      {tag true
+      {
        :hiccup (->> strings
                     (map (fn [s]
                            [:pre
                             [hiccup-element
                              (escape s)]]))
                     (into [:div]))
-       :md (->> strings
-                (map (fn [s]
-                       (format "
-::: {.%s}
-```clojure
-%s
-```
-:::
-" (name md-class) s)))
-                (str/join "\n"))})))
+       })))
 
 (def source-clojure
-  (clojure-code-item {:tag :source-clojure
-                      :hiccup-element :code.sourceCode.language-clojure.source-clojure.bg-light
-                      :md-class :sourceClojure}))
+  (clojure-code-item {:hiccup-element :code.sourceCode.language-clojure.source-clojure.bg-light}))
 
 
-(source-clojure "(defn f [x] (+ x 9))")
+
 
 (defn block [class x]
   ;; TODO: can the class go on pre instead? for more visibility in the dom
