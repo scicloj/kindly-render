@@ -148,6 +148,8 @@
              :marker {:size 20
                       :colorscale :Viridis}}]}))
 
+
+
 ;; (def people-as-maps
 ;;   (->> (range 29)
 ;;        (mapv (fn [_]
@@ -426,17 +428,38 @@
          )]
     (is (= [:thead [:tr ":preferred-language" ":age"]] (-> hiccup (nth 2))))
     (is (= 6 (-> hiccup  (nth 3) count)))
-    ))
+    )
 
+  (let [hiccup
+        (->
+         (to-hiccup-inline-js/render {:value (kind/table (take 5 people-as-maps))})
+         
+         
+         :hiccup)]
+    (is (= [:thead [:tr ":preferred-language" ":age"]] (-> hiccup (nth 2))))
+    (is (= 6 (-> hiccup  (nth 3) count))))
+  
+  (let [hiccup
+        (->
+         (to-hiccup-inline-js/render {:value
+                                      (kind/table (take 5 people-as-vectors))})
+         
+         :hiccup)]
+    
+    
+    (is (= 6 (-> hiccup  (nth 3) count)))))
+
+  
+
+  ;; (to-hiccup-inline-js/render  
+  ;;  {:value 
+  ;;   (kind/table {:x (range 6)
+  ;;                :y [:A :B :C :A :B :C]})})
+  
        ;https://github.com/scicloj/kindly-render/issues/38
                                
-       ;; (k/kind-eval '(kind/table (take 5 people-as-vectors)))
-                               
-       ;; (k/kind-eval '(kind/table (take 5 people-as-maps)))
-                               
-
-       ;; (k/kind-eval '(kind/table {:x (range 6)
-       ;;                            :y [:A :B :C :A :B :C]}))
+  
+       ;; 
                                
        ;; (k/kind-eval '(-> people-as-maps
        ;;                   tc/dataset

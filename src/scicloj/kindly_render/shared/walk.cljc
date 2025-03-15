@@ -144,21 +144,38 @@
                                  [tag])
                                (map :hiccup notes)))))))
 
+(defn- table-info-from-keys [column-names row-vectors row-maps]
+
+  {:column-names (or column-names (keys (first row-maps)))
+   :row-vectors (or row-vectors (map vals row-maps))})
+
+(defn- table-info-from-value [value]
+
+  (def value value)
+  (if (map? (first value))
+    {:column-names (keys (first value))
+     :row-vectors (map vals value)}
+    {:column-names []
+     :row-vectors value}))
+
 (defn render-table-recursively
   [{:as note :keys [value]} render]
-
-  (def note note)
-  (def value value)
-
+  
   (let [{:keys [column-names row-vectors row-maps]} value
-_ (def column-names column-names)
-         _ (def row-vectors row-vectors)
-        _ (def row-maps row-maps)
-        column-names (or column-names (keys (first row-maps)))
-        row-vectors (or row-vectors (map vals row-maps))
-        header-notes (for [column-name column-names]
+        
+        table-info
+        (if (and 
+             (nil? column-names)
+             (nil? row-vectors)
+             (nil? row-maps))
+          
+          (table-info-from-value value)
+          (table-info-from-keys column-names row-vectors row-maps))
+        _ (def table-info table-info)
+        
+        header-notes (for [column-name (:column-names table-info)]
                        (render {:value column-name}))
-        row-notes (for [row row-vectors]
+        row-notes (for [row (:row-vectors table-info)]
                     (for [column row]
                       (render {:value column})))]
     (-> note
