@@ -449,12 +449,18 @@
     
     (is (= 6 (-> hiccup  (nth 3) count)))))
 
-  
 
-  ;; (to-hiccup-inline-js/render  
-  ;;  {:value 
-  ;;   (kind/table {:x (range 6)
-  ;;                :y [:A :B :C :A :B :C]})})
+(is (= [:tr [:td "5"] [:td ":C"]]
+     (->
+      (to-hiccup-inline-js/render  
+       {:value 
+        (kind/table {:x (range 6)
+                     :y [:A :B :C :A :B :C]})})
+      :hiccup
+      (nth 3)
+      (nth 6)
+      )))
+;;=> 
   
        ;https://github.com/scicloj/kindly-render/issues/38
                                

@@ -149,12 +149,23 @@
   {:column-names (or column-names (keys (first row-maps)))
    :row-vectors (or row-vectors (map vals row-maps))})
 
+(defn map-of-vectors-to-vector-of-maps [m]
+  (let [keys (keys m)
+        vals (apply map vector (vals m))]
+    (map #(zipmap keys %) vals)))
+
+
 (defn- table-info-from-value [value]
 
-  (def value value)
-  (if (map? (first value))
+  (def value value)  
+  (cond 
+    (map? value)
+    {:column-names (keys value)
+     :row-vectors (map vals (map-of-vectors-to-vector-of-maps value))}
+    (map? (first value))
     {:column-names (keys (first value))
      :row-vectors (map vals value)}
+    (sequential? (first value))    
     {:column-names []
      :row-vectors value}))
 
