@@ -156,8 +156,6 @@
 
 
 (defn- table-info-from-value [value]
-
-  (def value value)  
   (cond 
     (map? value)
     {:column-names (keys value)
@@ -182,8 +180,7 @@
           
           (table-info-from-value value)
           (table-info-from-keys column-names row-vectors row-maps))
-        _ (def table-info table-info)
-        
+                
         header-notes (for [column-name (:column-names table-info)]
                        (render {:value column-name}))
         row-notes (for [row (:row-vectors table-info)]
