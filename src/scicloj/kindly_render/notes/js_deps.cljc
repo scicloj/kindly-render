@@ -1,6 +1,6 @@
 (ns scicloj.kindly-render.notes.js-deps
   (:require [scicloj.kindly.v4.api :as kindly]
-            [scicloj.kindly-render.shared.walk :as walk]))
+            [scicloj.kindly-render.shared.util :as util]))
 
 ;; TODO: hiccup without js may still require CSS (likely different CSS if so)
 ;; ... in which case we'd need to make a different set of dependencies.
@@ -157,6 +157,6 @@
   If `package` is `:embed`, fills the script content directly.
   `placement` can be `:head` or `:body` which is where in the document it will be appended."
   [{:as notebook :keys [kindly/options notes]}]
-  (let [deps (walk/union-into (walk/optional-deps notebook)
+  (let [deps (util/union-into (util/optional-deps notebook)
                               (keep :deps notes))]
     (resolve-deps-tree deps options)))

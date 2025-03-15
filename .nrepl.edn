@@ -1,1 +1,0 @@
-{:middleware [scicloj.kindly-render.nrepl.kindly-render-middleware/wrap-kindly-render]}

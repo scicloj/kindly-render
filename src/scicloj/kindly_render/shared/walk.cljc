@@ -3,7 +3,10 @@
   (:require [clojure.string :as str]
             [scicloj.kindly.v4.api :as kindly]
             [scicloj.kindly-advice.v1.api :as ka]
-            [scicloj.kindly-advice.v1.completion :as kc])
+            [scicloj.kindly-advice.v1.completion :as kc]
+    ;; TODO: maybe move resources to shared? it seems strange to depend out like this
+            [scicloj.kindly-render.notes.resources :as resources]
+            [scicloj.kindly-render.shared.util :as util])
   (:import (clojure.lang IDeref)))
 
 (defn show?
@@ -29,37 +32,12 @@
             (derefing-advise)))
       note)))
 
-(defn optional-deps
-  "Finds deps from kindly/options"
-  [{:keys [kindly/options]}]
-  (let [{:keys [deps]} options]
-    (cond (set? deps) deps
-          (map? deps) #{deps}
-          (sequential? deps) (set deps)
-          (keyword? deps) #{deps})))
-
-(defn unions
-  "Like set/union, but handles sequences or sets"
-  [& xs]
-  (reduce into #{} xs))
-
-(defn union-into
-  "Like unions, but extra arguments are sequences of sets or sequences to put into the first"
-  [x & xs]
-  (apply unions x (apply concat xs)))
-
-(defn note-deps
-  "Deps come from the kind, and possibly options"
-  [{:as note :keys [kind]}]
-  (update note :deps unions
-          (when kind #{kind})
-          (optional-deps note)))
 
 (defn advise-with-deps
   "Updates advice and deps of a note"
   [note]
   (-> (derefing-advise note)
-      (note-deps)))
+      (util/note-deps)))
 
 (defn render-data-recursively
   "Data kinds like vectors, maps, sets, and seqs are recursively rendered.
@@ -68,7 +46,7 @@
   (let [notes (for [v vs]
                 (render {:value v}))]
     (-> note
-        (update :deps union-into (keep :deps notes))
+        (update :deps util/union-into (keep :deps notes))
         (assoc :hiccup (into [:div props]
                              (for [{:keys [hiccup]} notes]
                                [:div {:style {:border  "1px solid grey"
@@ -138,7 +116,7 @@
                      children)
           notes (for [child children]
                   (render-hiccup-recursively {:value child} render))]
-      (-> (update note :deps union-into (keep :deps notes))
+      (-> (update note :deps util/union-into (keep :deps notes))
           (assoc :hiccup (into (if attrs
                                  [tag attrs]
                                  [tag])
@@ -153,7 +131,7 @@
                     (for [column row]
                       (render {:value column})))]
     (-> note
-        (update :deps union-into
+        (update :deps util/union-into
                 (keep :deps header-notes)
                 (keep :deps (apply concat row-notes)))
         (assoc :hiccup [:table
@@ -191,7 +169,7 @@
            (seq)
            (str/join " ")))
 
-(defn kindly-style [{:as rendered-note :keys [kind kindly/options hiccup]}]
+(defn kindly-style [{:as note :keys [kind kindly/options hiccup]}]
   (if (and kind (vector? hiccup))
     (->> (let [[tag & more] hiccup
                attrs (first more)
@@ -204,14 +182,16 @@
            (if (map? attrs)
              (update hiccup 1 kindly/deep-merge m)
              (into [tag m] more)))
-         (assoc rendered-note :hiccup))
+         (assoc note :hiccup))
     ;; else - no kind
-    rendered-note))
+    note))
 
 (defn advise-render-style [note render]
   (condp-> (advise-with-deps note)
            show? (-> (render)
-                     (kindly-style))))
+                     (kindly-style)
+                     ;; TODO: only if appropriate
+                     (resources/in-element-deps))))
 
 (defn index-notes [notes]
   (map-indexed (fn [idx x] (assoc x :idx idx)) notes))
