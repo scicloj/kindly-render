@@ -38,3 +38,5 @@
           (nth 2)
           second
           :src))))
+
+(to-hiccup/render {:value (kind/code  "(def f [x] {:y (+ x 9)})")})
