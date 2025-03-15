@@ -144,12 +144,46 @@
                                  [tag])
                                (map :hiccup notes)))))))
 
+(defn- table-info-from-keys [column-names row-vectors row-maps]
+
+  {:column-names (or column-names (keys (first row-maps)))
+   :row-vectors (or row-vectors (map vals row-maps))})
+
+(defn map-of-vectors-to-vector-of-maps [m]
+  (let [keys (keys m)
+        vals (apply map vector (vals m))]
+    (map #(zipmap keys %) vals)))
+
+
+(defn- table-info-from-value [value]
+  (cond 
+    (map? value)
+    {:column-names (keys value)
+     :row-vectors (map vals (map-of-vectors-to-vector-of-maps value))}
+    (map? (first value))
+    {:column-names (keys (first value))
+     :row-vectors (map vals value)}
+    (sequential? (first value))    
+    {:column-names []
+     :row-vectors value}))
+
 (defn render-table-recursively
   [{:as note :keys [value]} render]
-  (let [{:keys [column-names row-vectors]} value
-        header-notes (for [column-name column-names]
+  
+  (let [{:keys [column-names row-vectors row-maps]} value
+        
+        table-info
+        (if (and 
+             (nil? column-names)
+             (nil? row-vectors)
+             (nil? row-maps))
+          
+          (table-info-from-value value)
+          (table-info-from-keys column-names row-vectors row-maps))
+                
+        header-notes (for [column-name (:column-names table-info)]
                        (render {:value column-name}))
-        row-notes (for [row row-vectors]
+        row-notes (for [row (:row-vectors table-info)]
                     (for [column row]
                       (render {:value column})))]
     (-> note
