@@ -2,7 +2,9 @@
   (:require [clojure.test :refer [deftest is testing]]
             [scicloj.kindly-render.shared.walk :as walk]
             [scicloj.kindly-render.note.to-hiccup-js :as to-hiccup-js]
-            [scicloj.kindly.v4.kind :as kind]))
+            [scicloj.kindly.v4.kind :as kind]
+            [scicloj.kindly-render.shared.util :as util]
+            [clojure.string :as str]))
 
 (deftest unions-test
   (is (= #{:a :b :c}
@@ -37,7 +39,19 @@
    :idx            4})
 
 (deftest render-hiccup-recursively-test
-  (is (= [] (:hiccup (walk/render-hiccup-recursively {:kind  :kind/hiccup
-                                                      :value [:div {} [chart chart]]} to-hiccup-js/render))))
-  (is (= [] (:hiccup (walk/render-hiccup-recursively note to-hiccup-js/render))))
+  (is (str/starts-with? 
+         (-> (walk/render-hiccup-recursively {:kind  :kind/hiccup
+                                              :value [:div {} [chart chart]]} to-hiccup-js/render)
+             :hiccup
+             (util/multi-nth [2 2 2 2 1])
+             
+             )
+       "\n{\nvar myChart = echarts")
+      )
+  (is (= 260
+       (-> (walk/render-hiccup-recursively note to-hiccup-js/render)
+           :hiccup 
+           flatten
+           count
+           )))
   )

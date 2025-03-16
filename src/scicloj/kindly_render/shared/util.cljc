@@ -8,3 +8,10 @@
 
 (defn kind-str [value]
   (str/join \newline (if (vector? value) value [value])))
+
+(defn multi-nth
+  [v indexes]
+  (reduce (fn [coll idx]
+            (nth coll idx))
+          v
+          indexes))
