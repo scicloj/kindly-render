@@ -10,6 +10,7 @@
    [scicloj.kindly.v4.kind :as kind]
    [scicloj.metamorph.ml.rdatasets :as rdatasets]
    [scicloj.tableplot.v1.plotly :as plotly]
+   [scicloj.kindly-render.shared.util :as util]
    [tablecloth.api :as tc]))
 
 
@@ -23,12 +24,6 @@
   (kind/image raw-image))
 
 
-(defn- multi-nth
-  [v indexes]
-  (reduce (fn [coll idx]
-            (nth coll idx))
-          v
-          indexes))
 
 (def people-as-maps
   (->> (range 29)
@@ -184,12 +179,9 @@
         (->
          (to-hiccup-inline-js/render {:value (kind/vega-lite vl-spec)})
          :hiccup
-         (nth 2)
-         (nth 2)
-         second)
+         (util/multi-nth [2 2 1]))
         "vega"))))
 
-;; ;(to-hiccup-inline-js/render {:form })
 
 
 (deftest kind-vega-works
@@ -199,9 +191,7 @@
           (->
            (to-hiccup-inline-js/render {:value (kind/vega vega-spec)})
            :hiccup
-           (nth 2)
-           (nth 2)
-           second)
+           (util/multi-nth [2 2 1]))
           "vega"))))
 
 
@@ -212,9 +202,7 @@
           (->
            (to-hiccup-inline-js/render {:value (kind/plotly plotly-data)})
            :hiccup
-           (nth 2)
-           first
-           second)
+           (util/multi-nth [2 0 1]))
           "Plotly.newPlot")))
 
   (is (= true
@@ -223,9 +211,7 @@
            (to-hiccup-inline-js/render {:value (kind/plotly plotly-data {:style {:width 100
                                                                                  :height 100}})})
            :hiccup
-           (nth 2)
-           first
-           second)
+           (util/multi-nth [2 0 1]))
           "  \n  var"))))
 
 (deftest kind-reagent-works
@@ -239,8 +225,7 @@
                                               (pr-str (map inc numbers))])
                                           (vec (range 10))])})
            :hiccup
-           (nth 2)
-           (nth 4))
+           (util/multi-nth [2 4]))
           "reagent.dom/render"))))
 
 (deftest kind-reagent-supports-deps
@@ -268,8 +253,7 @@
     ;; Note we need to mention the dependency:
                                          {:html/deps [:leaflet]})})
            :hiccup
-           (nth 2)
-           (nth 5))
+           (util/multi-nth [2 5]))
           "leaflet.js"))))
 
 (deftest kind-tex-works
@@ -277,8 +261,7 @@
    (str/includes?
     (->
      (to-hiccup-inline-js/render {:value (kind/tex "x^2 + y^2 = z^2")})
-     :hiccup
-     (multi-nth []))
+     :hiccup)
     "katex")))
 
 
@@ -291,9 +274,7 @@
                                   (kind/portal
                                    {:x (range 3)})})
      :hiccup
-     (nth 2)
-     first
-     second)
+     (util/multi-nth [2 0 1]))
     ":portal.viewer/inspector")))
 
 
@@ -376,7 +357,7 @@
     * Here is **some more** markdown.
 ")})
         :hiccup
-        (multi-nth [2 1 2 1 1 0])))))
+        (util/multi-nth [2 1 2 1 1 0])))))
 
 
 
