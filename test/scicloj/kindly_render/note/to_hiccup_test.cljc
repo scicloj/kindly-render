@@ -1,6 +1,5 @@
 (ns scicloj.kindly-render.note.to-hiccup-test
   (:require
-   [clojure.string :as str]
    [clojure.test :refer [deftest is]]
    [scicloj.kindly-render.note.to-hiccup :as to-hiccup]
    [scicloj.kindly.v4.kind :as kind]
