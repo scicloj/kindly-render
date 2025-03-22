@@ -1,22 +1,11 @@
 {:customREPLCommandSnippets
- [{:name "Eval and browser"
-   :key "v"
-   :snippet (do $current-form "https://localhost:1971")
-   :command ["simpleBrowser.show"]}
-  {:name "Info test"
-   :key "i"
-   :snippet ["calva.info" "Hi there!" "OK"]
-   :resultIsCommand true},
-  {:name "Webview test"
-   :key "w"
-   :snippet ["calva.webview" {:url "https://calva.io"}]
-   :resultIsCommand true},
-  {:name "Webview test2"
-   :key "u"
-   :key-binding "option+u"
-   :modal ", a c"
-   :snippet ["calva.webview" {:url "https://calva.io"}]
-   :resultIsCommand true}]}
+ [
+  {:name "Kindly render in webview",
+   :repl "clj",
+   :key "k",
+   :snippet "(do (require '[scicloj.kindly-render.note.to-hiccup-inline-js :as to-hiccup-inline-js] '[hiccup.core :as h]) (let [ html (->> (to-hiccup-inline-js/render {:value $current-form}) :hiccup h/html)] (tagged-literal 'flare/html {:html html :title \"kind\" :key \"kind\"})))"
+   }
+  ]}
 
 ;; key bindings
 ;; invoke as commands

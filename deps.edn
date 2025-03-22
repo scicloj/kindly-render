@@ -11,7 +11,8 @@
  ;; TODO: CALVA repl starting does not respect .nrepl.edn, so use manual command
  ;; clojure -Sdeps '{:deps {nrepl/nrepl {:mvn/version,"1.1.1"},cider/cider-nrepl {:mvn/version,"0.47.1"}}}' -M:dev -m nrepl.cmdline --middleware "[cider.nrepl/cider-middleware scicloj.kindly-render.nrepl.kindly-render-middleware/wrap-kindly-render]"
  :aliases {:dev   {:extra-paths ["dev" "examples" "notebooks"]
-                   :extra-deps  {org.scicloj/clay           {:mvn/version "2-beta25"}
+                   :extra-deps  {
+                                 org.scicloj/clay           {:mvn/version "2-beta36"}
                                  org.scicloj/kindly-advice  {:mvn/version "1-beta12"}
                                  scicloj/tablecloth         {:mvn/version "7.042"}
                                  org.scicloj/tableplot      {:mvn/version "1-beta5"}}}
