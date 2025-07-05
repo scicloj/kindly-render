@@ -9,8 +9,7 @@
    [scicloj.kindly-render.shared.util :as util]
    [scicloj.kindly-render.shared.walk :as walk])
   (:import
-   [javax.imageio ImageIO]) 
-  )
+   [javax.imageio ImageIO]))
 
 (defmulti render-advice :kind)
 
@@ -154,7 +153,6 @@
   (recursives/render-table note render))
 
 (defmethod render-advice :kind/video [{:keys [value] :as note}]
-  
   (let [{:keys [src
                 youtube-id
                 iframe-width
@@ -163,8 +161,8 @@
                 embed-options]
          :or {allowfullscreen true}}
         value]
-  
-    (merge note 
+
+    (merge note
            (cond
     ;; A video file
              src {:hiccup [:video {:controls ""}
@@ -212,4 +210,3 @@
 
 (defmethod render-advice :kind/fn [note]
   (recursives/render-kind-fn note render))
-

@@ -5,7 +5,12 @@
 
 ;; Notebooks are namespaces that mix *narrative, code, and visualizations*.
 
+
+
+
 ;; ## Why visualize?
+
+
 
 (def distances
   (tc/dataset [["shop" 0.2]
@@ -81,6 +86,33 @@
   )
 
 
+(tagged-literal 'flare/html {:type :webview
+                             :key :test
+                             :title "Test flare!"
+                             :html "<div><h1>I'm HTML</h1><svg><circle r=50></svg></div>"})
+
+(tagged-literal 'flare/message {:type :info
+                                :message "Congratulations, you sent a flare!"})
+
+(tagged-literal 'flare/html {:html "<h1>Hello, Calva!</h1>",
+                             :title "Greeting"})
+
+(require '[clojure.string :as str])
+(defn svg []
+  (let [circles (for [i (range 10 100 10)]
+                  (let [hue (* (/ i 100) 360) ; Map radius to hue (0-360)
+                        color (str "hsl(" hue ", 100%, 50%)")]
+                    (str "<circle r='" i "' stroke='" color "'/>")))]
+    (str "<svg height='200' width='200'>"
+         "<g transform='translate(100,100)' fill='none'>"
+         (str/join circles)
+         "</g>"
+         "</svg>")))
+(tagged-literal 'flare/html {:html (svg)
+                             :title "SVG Circles"
+                             :key "example"})
+
+
 {:calva/flare {:type :webview
                :key :test
                :title "Test flare!"
@@ -150,4 +182,3 @@
 (cmd "simpleBrowser.api.open" "https://calva.io/")
 
 (println command-result)
-
