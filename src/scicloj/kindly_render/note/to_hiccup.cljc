@@ -1,15 +1,13 @@
 (ns scicloj.kindly-render.note.to-hiccup
-  (:require
-   [clojure.data.codec.base64 :as b64]
-   [clojure.java.io :as io]
-   [clojure.pprint :as pprint]
-   [clojure.string :as str]
-   [scicloj.kindly-render.shared.from-markdown :as from-markdown]
-   [scicloj.kindly-render.shared.recursives :as recursives]
-   [scicloj.kindly-render.shared.util :as util]
-   [scicloj.kindly-render.shared.walk :as walk])
-  (:import
-   [javax.imageio ImageIO]))
+  (:require [clojure.data.codec.base64 :as b64]
+            [clojure.java.io :as io]
+            [clojure.pprint :as pprint]
+            [clojure.string :as str]
+            [scicloj.kindly-render.shared.from-markdown :as from-markdown]
+            [scicloj.kindly-render.shared.recursives :as recursives]
+            [scicloj.kindly-render.shared.util :as util]
+            [scicloj.kindly-render.shared.walk :as walk])
+  (:import (javax.imageio ImageIO)))
 
 (defmulti render-advice :kind)
 
