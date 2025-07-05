@@ -34,5 +34,3 @@
            ;; neil version set <version>
            :neil {:project {:name org.scicloj/kindly-render
                             :version "0.1.5-alpha"}}}}
-           
- 
