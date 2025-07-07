@@ -7,7 +7,8 @@
             [scicloj.kindly-render.shared.recursives :as recursives]
             [scicloj.kindly-render.shared.util :as util]
             [scicloj.kindly-render.shared.walk :as walk])
-  (:import (javax.imageio ImageIO)))
+  (:import (javax.imageio ImageIO)
+           (java.awt.image BufferedImage)))
 
 (defmulti render-advice :kind)
 
@@ -30,11 +31,11 @@
 (defn escape [string]
   (-> string
       (str/escape
-       {\< "&lt;"
-        \> "&gt;"
-        \& "&amp;"
-        \" "&quot;"
-        \' "&apos;"})))
+        {\< "&lt;"
+         \> "&gt;"
+         \& "&amp;"
+         \" "&quot;"
+         \' "&apos;"})))
 
 
 (defn clojure-code-item [{:keys [hiccup-element]}]
@@ -92,41 +93,50 @@
   (->> (pprint-block value)
        (assoc note :hiccup)))
 
+
+(defn src-encode-image [value]
+  (let [out (java.io.ByteArrayOutputStream.)
+        value (if (sequential? value)
+                (first value)
+                value)
+        _ (ImageIO/write ^BufferedImage value "png" out)]
+    (str "data:image/png;base64,"
+         (-> out .toByteArray b64/encode String.))))
+
+(defn src-copy-image [value]
+  #_(let [png-path (files/next-file!
+                   full-target-path
+                   ""
+                   value
+                   ".png")]
+    (do
+      (when-not
+        (util.image/write! value "png" png-path)
+        (throw (ex-message "Failed to save image as PNG.")))
+      {:hiccup [:img {:src ...}]})
+    (-> png-path
+        (str/replace
+          (re-pattern (str "^"
+                           base-target-path
+                           "/"))
+          ""))))
+
 (defmethod render-advice :kind/image
   [{:as note :keys [value]}]
-  (let [out (io/java.io.ByteArrayOutputStream.)
-        v
-        (if (sequential? value)
-          (first value)
-          value)
-        _ (ImageIO/write v "png" out)
-        hiccup [:img {:src (str "data:image/png;base64,"
-                                (-> out .toByteArray b64/encode String.))}]]
+  (let [value (if (sequential? value)
+                (first value)
+                value)]
+    (->> (cond
+           ;; An image url:
+           (:src value)
+           [:img value]
 
-    (assoc note
-           :hiccup hiccup)))
-
-
-;; TODO: this is problematic because it creates files
-#_(defmethod render-advice :kind/image [{:keys [value]}]
-    (let [image (if (sequential? value)
-                  (first value)
-                  value)
-          png-path (files/next-file!
-                     full-target-path
-                     ""
-                     image
-                     ".png")]
-      (when-not
-        (util.image/write! image "png" png-path)
-        (throw (ex-message "Failed to save image as PNG.")))
-      [:img {:src (-> png-path
-                      (str/replace
-                        (re-pattern (str "^"
-                                         base-target-path
-                                         "/"))
-                        ""))}]))
-
+           ;; A BufferedImage object:
+           (instance? BufferedImage value)
+           [:img {:src (if true
+                         (src-encode-image value)
+                         (src-copy-image value))}])
+        (assoc note :hiccup))))
 
 ;; Data types that can be recursive
 
@@ -157,30 +167,30 @@
                 iframe-height
                 allowfullscreen
                 embed-options]
-         :or {allowfullscreen true}}
+         :or   {allowfullscreen true}}
         value]
 
     (merge note
            (cond
-    ;; A video file
+             ;; A video file
              src {:hiccup [:video {:controls ""}
-                           [:source {:src src
+                           [:source {:src  src
                                      :type "video/mp4"}]]}
-    ;; A youtube video
+             ;; A youtube video
              youtube-id {:hiccup [:iframe
                                   (merge
-                                   (when iframe-height
-                                     {:height iframe-height})
-                                   (when iframe-width
-                                     {:width iframe-width})
-                                   {:src (str "https://www.youtube.com/embed/"
-                                              youtube-id
-                                              (some->> embed-options
-                                                       (map (fn [[k v]]
-                                                              (format "%s=%s" (name k) v)))
-                                                       (str/join "&")
-                                                       (str "?")))
-                                    :allowfullscreen allowfullscreen})]}))
+                                    (when iframe-height
+                                      {:height iframe-height})
+                                    (when iframe-width
+                                      {:width iframe-width})
+                                    {:src             (str "https://www.youtube.com/embed/"
+                                                           youtube-id
+                                                           (some->> embed-options
+                                                                    (map (fn [[k v]]
+                                                                           (format "%s=%s" (name k) v)))
+                                                                    (str/join "&")
+                                                                    (str "?")))
+                                     :allowfullscreen allowfullscreen})]}))
     ))
 
 #?(:clj
@@ -204,7 +214,7 @@
   (let [sym (second value)
         s (str "#'" (str *ns*) "/" sym)]
     (assoc note
-           :hiccup s)))
+      :hiccup s)))
 
 (defmethod render-advice :kind/fn [note]
   (recursives/render-kind-fn note render))

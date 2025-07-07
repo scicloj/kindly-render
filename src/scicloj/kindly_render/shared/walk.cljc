@@ -156,31 +156,31 @@
 
 
 (defn- table-info-from-value [value]
-  (cond 
+  (cond
     (map? value)
     {:column-names (keys value)
      :row-vectors (map vals (map-of-vectors-to-vector-of-maps value))}
     (map? (first value))
     {:column-names (keys (first value))
      :row-vectors (map vals value)}
-    (sequential? (first value))    
+    (sequential? (first value))
     {:column-names []
      :row-vectors value}))
 
 (defn render-table-recursively
   [{:as note :keys [value]} render]
-  
+
   (let [{:keys [column-names row-vectors row-maps]} value
-        
+
         table-info
-        (if (and 
+        (if (and
              (nil? column-names)
              (nil? row-vectors)
              (nil? row-maps))
-          
+
           (table-info-from-value value)
           (table-info-from-keys column-names row-vectors row-maps))
-                
+
         header-notes (for [column-name (:column-names table-info)]
                        (render {:value column-name}))
         row-notes (for [row (:row-vectors table-info)]

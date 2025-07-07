@@ -107,8 +107,8 @@
 (defmethod render-advice :kind/hiccup [note]
   (walk/render-hiccup-recursively note render))
 
-(defmethod render-advice :kind/table [{:as note :keys [value]}]
-  (walk/render-table-recursively value render))
+(defmethod render-advice :kind/table [note]
+  (walk/render-table-recursively note render))
 
 (defmethod render-advice :kind/tex [{:as note :keys [value]}]
   (->> (into [:div]
