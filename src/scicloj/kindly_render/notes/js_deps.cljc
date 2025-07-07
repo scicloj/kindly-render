@@ -10,7 +10,7 @@
 
 ;; TODO: use gh-pages published location
 ;; should these be folded into kindly.css?
-(def clay-root "https://raw.githubusercontent.com/scicloj/clay/refs/heads/main/resources/styles/")
+(def clay-root "https://scicloj.github.io/clay/styles/")
 (def clay-css ["bootstrap-generated-by-quarto.min.css"
                "bootstrap-toc-customization.css"
                "bootswatch-cosmo-bootstrap.min.css"
@@ -37,6 +37,11 @@
    :datatables  {:deps #{:jquery}
                  :js   ["https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"]
                  :css  ["https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css"]}
+   :highlightjs {:css ["https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/default.min.css"]
+                 :js  ["https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/highlight.min.js"
+                       "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/languages/clojure.min.js"]
+                 :script [{:placement :body
+                           :content   "hljs.highlightAll();"}]}
    :react       {:js ["https://unpkg.com/react@18/umd/react.production.min.js"
                       "https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"]}
    #_#_:tmdjs {:js ["https://daslu.github.io/scittle/js/scittle.tmdjs.js"]}

@@ -44,6 +44,10 @@
         (string? package) [:link {:type "text/css" :rel "stylesheet" :href (relative href package)}]
         :else-embed [:style (slurp-resource href)]))
 
+(defmethod resource-hiccup :script
+  [{:keys [content]}]
+  [:script content])
+
 (defmethod resource-hiccup :scittle
   [{:keys [forms]}]
   (to-hiccup-js/scittle forms))
@@ -59,6 +63,7 @@
            (case type
              :js {:src dep}
              :css {:href dep}
+             :script {:body dep}
              ;; TODO: could collect scittle into one tag
              :scittle {:forms [dep]}))))
 
@@ -68,7 +73,7 @@
   [depm global-props]
   (let [props (merge global-props
                      (select-keys [:placement :package :async] depm))]
-    (for [type [:css :js :scittle]
+    (for [type [:css :js :scittle :script]
           ;; placement here may be a map of type to placement key, or just a placement key
           :let [props (if (map? (:placement props))
                         (update props :placement get type)

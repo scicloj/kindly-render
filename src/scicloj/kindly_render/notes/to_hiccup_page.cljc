@@ -37,7 +37,9 @@
   [{:as notebook :keys [resource-hiccups]}]
   (let [{:keys [head body]} resource-hiccups]
     (list [:head head]
-          [:body (hiccups notebook) body])))
+          [:body
+           [:div.container (hiccups notebook)]
+           body])))
 
 (defn render-notebook
   "Returns an edn string representation of a notebook as a hiccup page"
