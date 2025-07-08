@@ -37,7 +37,8 @@
    :datatables  {:deps #{:jquery}
                  :js   ["https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"]
                  :css  ["https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css"]}
-   :highlightjs {:css ["https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/default.min.css"]
+   ;; TODO: Panda style is just what Clay chooses to use
+   :highlightjs {:css ["https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/panda-syntax-light.min.css"]
                  :js  ["https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/highlight.min.js"
                        "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/languages/clojure.min.js"]
                  :script [{:placement :body
