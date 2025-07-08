@@ -5,5 +5,5 @@
 .nrepl-port
 .calva/
 target
-docs/.clay_files
-docs/.clay.html
+.clay_files
+.clay.html
