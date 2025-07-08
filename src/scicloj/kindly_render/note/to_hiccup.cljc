@@ -105,21 +105,21 @@
 
 (defn src-copy-image [value]
   #_(let [png-path (files/next-file!
-                   full-target-path
-                   ""
-                   value
-                   ".png")]
-    (do
-      (when-not
-        (util.image/write! value "png" png-path)
-        (throw (ex-message "Failed to save image as PNG.")))
-      {:hiccup [:img {:src ...}]})
-    (-> png-path
-        (str/replace
-          (re-pattern (str "^"
-                           base-target-path
-                           "/"))
-          ""))))
+                     full-target-path
+                     ""
+                     value
+                     ".png")]
+      (do
+        (when-not
+          (util.image/write! value "png" png-path)
+          (throw (ex-message "Failed to save image as PNG.")))
+        {:hiccup [:img {:src ...}]})
+      (-> png-path
+          (str/replace
+            (re-pattern (str "^"
+                             base-target-path
+                             "/"))
+            ""))))
 
 (defmethod render-advice :kind/image
   [{:as note :keys [value]}]
@@ -136,7 +136,7 @@
            [:img {:src (if true
                          (src-encode-image value)
                          (src-copy-image value))}])
-        (assoc note :hiccup))))
+         (assoc note :hiccup))))
 
 ;; Data types that can be recursive
 
@@ -169,29 +169,23 @@
                 embed-options]
          :or   {allowfullscreen true}}
         value]
-
-    (merge note
-           (cond
-             ;; A video file
-             src {:hiccup [:video {:controls ""}
-                           [:source {:src  src
-                                     :type "video/mp4"}]]}
-             ;; A youtube video
-             youtube-id {:hiccup [:iframe
-                                  (merge
-                                    (when iframe-height
-                                      {:height iframe-height})
-                                    (when iframe-width
-                                      {:width iframe-width})
-                                    {:src             (str "https://www.youtube.com/embed/"
-                                                           youtube-id
-                                                           (some->> embed-options
-                                                                    (map (fn [[k v]]
-                                                                           (format "%s=%s" (name k) v)))
-                                                                    (str/join "&")
-                                                                    (str "?")))
-                                     :allowfullscreen allowfullscreen})]}))
-    ))
+    (->> (cond
+           ;; A video file
+           src [:video {:controls ""}
+                [:source {:src  src
+                          :type "video/mp4"}]]
+           ;; A YouTube video
+           youtube-id [:iframe
+                       (cond-> {:src             (str "https://www.youtube.com/embed/" youtube-id
+                                                      (some->> embed-options
+                                                               (map (fn [[k v]]
+                                                                      (format "%s=%s" (name k) v)))
+                                                               (str/join "&")
+                                                               (str "?")))
+                                :allowfullscreen allowfullscreen}
+                               iframe-height (assoc :height iframe-height)
+                               iframe-width (assoc :width iframe-width))])
+         (assoc note :hiccup))))
 
 #?(:clj
    (defmethod render-advice :kind/dataset [{:as note :keys [value kindly/options]}]
