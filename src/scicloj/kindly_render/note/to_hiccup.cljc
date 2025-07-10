@@ -207,6 +207,8 @@
 (defmethod render-advice :kind/fn [note]
   (recursives/render-kind-fn note render))
 
+(defmethod render-advice :kind/fragment [note]
+  (walk/render-fragment-recursively note render))
 
 (defmethod render-advice :default [{:as note :keys [value kind]}]
   (->> (if kind

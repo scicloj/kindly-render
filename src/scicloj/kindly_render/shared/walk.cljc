@@ -144,6 +144,20 @@
                                  [tag])
                                (map :hiccup notes)))))))
 
+(defn render-fragment-recursively
+  [{:as note :keys [kind value]} render]
+  (let [notes (for [child value]
+                (render {:value child}))]
+    (-> (update note :deps union-into (keep :deps notes))
+        (assoc :hiccup (map :hiccup notes)))))
+
+(defn render-fragment-md-recursively
+  [{:as note :keys [kind value]} render]
+  (let [notes (for [child value]
+                (render {:value child}))]
+    (-> (update note :deps union-into (keep :deps notes))
+        (assoc :md (map :md notes)))))
+
 (defn- table-info-from-keys [column-names row-vectors row-maps]
 
   {:column-names (or column-names (keys (first row-maps)))

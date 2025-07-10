@@ -183,3 +183,7 @@ myChart.setOption(%s);
          (format "Highcharts.chart(document.currentScript.parentElement, %s);"
                  (util/json-str value))]]
        (assoc note :hiccup)))
+
+
+(defmethod render-advice :kind/fragment [note]
+  (walk/render-fragment-recursively note render))

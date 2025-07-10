@@ -121,3 +121,6 @@
        (map (partial format "$$%s$$"))
        (str/join \newline)
        (assoc note :md)))
+
+(defmethod render-advice :kind/fragment [note]
+  (walk/render-fragment-md-recursively note render))
