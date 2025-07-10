@@ -15,13 +15,7 @@
 (defn render [note]
   (walk/advise-render-style note render-advice))
 
-(defmethod render-advice :default [{:as note :keys [value kind]}]
-  (->> (if kind
-         [:div
-          [:div "Unimplemented: " [:code (pr-str kind)]]
-          [:code (pr-str value)]]
-         (str value))
-       (assoc note :hiccup)))
+
 
 (defn in-vector [v]
   (if (sequential? v)
@@ -212,3 +206,12 @@
 
 (defmethod render-advice :kind/fn [note]
   (recursives/render-kind-fn note render))
+
+
+(defmethod render-advice :default [{:as note :keys [value kind]}]
+  (->> (if kind
+         [:div
+          [:div "Unimplemented: " [:code (pr-str kind)]]
+          [:code (pr-str value)]]
+         (pprint-block value))
+       (assoc note :hiccup)))
