@@ -28,7 +28,7 @@
 (def js-deps
   "Resources that do not correspond to a kind, but are useful on their own"
   ;; TODO: host kindly css in gh-pages
-  {:kindly      {:css ["https://raw.githubusercontent.com/scicloj/kindly-render/refs/heads/main/resources/kindly.css"]}
+  {:kindly      {:css [(str clay-root "kindly.css")]}
    :clay        clay-resources
    :bootstrap   {:css ["https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"]}
    :d3          {:js ["https://cdn.jsdelivr.net/npm/d3@7"
@@ -38,9 +38,9 @@
                  :js   ["https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"]
                  :css  ["https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css"]}
    ;; TODO: Panda style is just what Clay chooses to use
-   :highlightjs {:css ["https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/panda-syntax-light.min.css"]
-                 :js  ["https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/highlight.min.js"
-                       "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/languages/clojure.min.js"]
+   :highlightjs {:css    ["https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/panda-syntax-light.min.css"]
+                 :js     ["https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/highlight.min.js"
+                          "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/languages/clojure.min.js"]
                  :script [{:placement :body
                            :content   "hljs.highlightAll();"}]}
    :react       {:js ["https://unpkg.com/react@18/umd/react.production.min.js"
