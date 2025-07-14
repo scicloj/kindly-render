@@ -186,6 +186,7 @@
   [{:as note :keys [value kindly/options]} render]
   (let [{:keys [column-names row-vectors row-maps]} value
         {:keys [use-datatables datatables]} options
+        datatables-js (and use-datatables (js? note))
         table-info (if (or column-names row-vectors row-maps)
                      (table-info-from-keys column-names row-vectors row-maps)
                      (table-info-from-value value))
@@ -196,7 +197,7 @@
                       (render {:value column})))]
     (-> note
         (update :deps union-into
-                (when use-datatables [#{:datatables}])
+                (when datatables-js [#{:datatables}])
                 (keep :deps header-notes)
                 (keep :deps (apply concat row-notes)))
         (assoc :hiccup [:table
@@ -208,7 +209,7 @@
                                 (into [:tr]
                                       (for [column row]
                                         [:td (:hiccup column)]))))
-                        (when use-datatables
+                        (when datatables-js
                           [:script
                            (format "new DataTable(document.currentScript.parentElement, %s);"
                                    (util/json-str datatables))])]))))
