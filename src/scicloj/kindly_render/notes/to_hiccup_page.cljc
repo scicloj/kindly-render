@@ -6,6 +6,8 @@
    :code-hiccup
    :out-hiccup
    :err-hiccup
+   :global-out-hiccup
+   :global-err-hiccup
    :hiccup
    :ex-hiccup])
 

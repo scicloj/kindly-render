@@ -3,7 +3,8 @@
   (:require [clojure.string :as str]
             [scicloj.kindly.v4.api :as kindly]
             [scicloj.kindly-advice.v1.api :as ka]
-            [scicloj.kindly-advice.v1.completion :as kc])
+            [scicloj.kindly-advice.v1.completion :as kc]
+            [scicloj.kindly-render.shared.util :as util])
   (:import (clojure.lang IDeref)))
 
 (defn show?
@@ -182,19 +183,12 @@
      :row-vectors value}))
 
 (defn render-table-recursively
-  [{:as note :keys [value]} render]
-
+  [{:as note :keys [value kindly/options]} render]
   (let [{:keys [column-names row-vectors row-maps]} value
-
-        table-info
-        (if (and
-             (nil? column-names)
-             (nil? row-vectors)
-             (nil? row-maps))
-
-          (table-info-from-value value)
-          (table-info-from-keys column-names row-vectors row-maps))
-
+        {:keys [use-datatables datatables]} options
+        table-info (if (or column-names row-vectors row-maps)
+                     (table-info-from-keys column-names row-vectors row-maps)
+                     (table-info-from-value value))
         header-notes (for [column-name (:column-names table-info)]
                        (render {:value column-name}))
         row-notes (for [row (:row-vectors table-info)]
@@ -202,6 +196,7 @@
                       (render {:value column})))]
     (-> note
         (update :deps union-into
+                (when use-datatables [#{:datatables}])
                 (keep :deps header-notes)
                 (keep :deps (apply concat row-notes)))
         (assoc :hiccup [:table
@@ -212,7 +207,11 @@
                               (for [row row-notes]
                                 (into [:tr]
                                       (for [column row]
-                                        [:td (:hiccup column)]))))]))))
+                                        [:td (:hiccup column)]))))
+                        (when use-datatables
+                          [:script
+                           (format "new DataTable(document.currentScript.parentElement, %s);"
+                                   (util/json-str datatables))])]))))
 
 (defmacro condp->
   "Takes an expression and a set of predicate/form pairs. Threads expr (via ->)

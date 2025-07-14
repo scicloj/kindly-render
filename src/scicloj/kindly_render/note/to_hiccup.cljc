@@ -1,6 +1,5 @@
 (ns scicloj.kindly-render.note.to-hiccup
   (:require [clojure.data.codec.base64 :as b64]
-            [clojure.java.io :as io]
             [clojure.pprint :as pprint]
             [clojure.string :as str]
             [scicloj.kindly-render.shared.from-markdown :as from-markdown]
@@ -14,8 +13,6 @@
 
 (defn render [note]
   (walk/advise-render-style note render-advice))
-
-
 
 (defn in-vector [v]
   (if (sequential? v)
@@ -31,7 +28,6 @@
          \" "&quot;"
          \' "&apos;"})))
 
-
 (defn clojure-code-item [{:keys [hiccup-element]}]
   (fn [string-or-strings]
     (let [strings (->> string-or-strings
@@ -45,8 +41,6 @@
 
 (def source-clojure
   (clojure-code-item {:hiccup-element :code.sourceCode.language-clojure.source-clojure.bg-light}))
-
-
 
 (defn block [class x]
   ;; TODO: can the class go on pre instead? for more visibility in the dom

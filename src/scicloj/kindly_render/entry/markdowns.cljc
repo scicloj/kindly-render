@@ -14,14 +14,16 @@
     (to-markdown/render note)
     note))
 
-(defn extra-markdown [{:as note :keys [code out err exception kindly/options]}]
+(defn extra-markdown [{:as note :keys [code out err global-out global-err exception kindly/options]}]
   (let [{:keys [hide-code]} options
         show-code (and code (not hide-code))]
     (cond-> note
             show-code (assoc :code-md (to-markdown/code-block code (walk/js? note)))
-            out (assoc :out-md (to-markdown/message out "stdout"))
-            err (assoc :err-md (to-markdown/message err "stderr"))
-            exception (assoc :ex-md (to-markdown/message (ex-message exception) "exception")))))
+            out (assoc :out-md (to-markdown/message out "OUT"))
+            err (assoc :err-md (to-markdown/message err "ERR"))
+            global-out (assoc :global-out-md (to-markdown/message global-out "THREAD OUT"))
+            global-err (assoc :global-err-md (to-markdown/message global-err "THREAD ERR"))
+            exception (assoc :ex-md (to-markdown/message (ex-message exception) "Exception")))))
 
 (defn comment-hiccup
   "Converts inline comments to (markdown) hiccup"

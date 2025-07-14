@@ -17,13 +17,15 @@
 
 (defn extra-hiccups
   "Adds hiccup for code, output, and exceptions"
-  [{:as note :keys [code out err exception kindly/options]}]
+  [{:as note :keys [code out err global-out global-err exception kindly/options]}]
   (let [{:keys [hide-code]} options
         show-code (and code (not hide-code))]
     (cond-> note
             show-code (assoc :code-hiccup (to-hiccup/code-block code))
-            out (assoc :out-hiccup (to-hiccup/message out "Stdout"))
-            err (assoc :err-hiccup (to-hiccup/message err "Stderr"))
+            out (assoc :out-hiccup (to-hiccup/message out "OUT"))
+            err (assoc :err-hiccup (to-hiccup/message err "ERR"))
+            global-out (assoc :global-out-hiccup (to-hiccup/message out "THREAD OUT"))
+            global-err (assoc :global-err-hiccup (to-hiccup/message err "THREAD ERR"))
             exception (assoc :ex-hiccup (to-hiccup/message (ex-message exception) "Exception")))))
 
 (defn comment-hiccup

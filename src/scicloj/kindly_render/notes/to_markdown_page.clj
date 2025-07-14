@@ -9,6 +9,8 @@
    :code-md
    :out-md
    :err-md
+   :global-out-md
+   :global-err-md
    :md
    :ex-md])
 
