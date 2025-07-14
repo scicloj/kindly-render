@@ -127,9 +127,10 @@
      ;; look up javascript dependency
      (get-in options [:js-deps dep])
      (get js-deps dep)
-     (throw (ex-info (str "Unknown dep requested: " dep)
-                     {:id  ::unknown-dep
-                      :dep dep})))
+     (when-not (contains? kindly/known-kinds dep)
+       (throw (ex-info (str "Unknown dep requested: " dep)
+                       {:id  ::unknown-dep
+                        :dep dep}))))
     ;; else a map like {:js [...], :css [...], :scittle [...]} with custom resources
     (if (and (map? dep)
              (or (contains? dep :js)
