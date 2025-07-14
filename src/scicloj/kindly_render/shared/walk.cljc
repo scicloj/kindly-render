@@ -30,19 +30,20 @@
             (derefing-advise)))
       note)))
 
-(defn optional-deps
-  "Finds deps from kindly/options"
-  [{:keys [kindly/options]}]
-  (let [{:keys [deps]} options]
-    (cond (set? deps) deps
-          (map? deps) #{deps}
-          (sequential? deps) (set deps)
-          (keyword? deps) #{deps})))
-
 (defn unions
   "Like set/union, but handles sequences or sets"
   [& xs]
   (reduce into #{} xs))
+
+(defn optional-deps
+  "Finds deps from kindly/options"
+  [{:keys [kindly/options]}]
+  (let [deps (unions (:deps options)
+                     (:html/deps options))]
+    (cond (set? deps) deps
+          (map? deps) #{deps}
+          (sequential? deps) (set deps)
+          (keyword? deps) #{deps})))
 
 (defn union-into
   "Like unions, but extra arguments are sequences of sets or sequences to put into the first"
