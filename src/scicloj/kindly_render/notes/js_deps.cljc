@@ -119,16 +119,17 @@
   "Missing deps are ignored because some kinds do not require dependencies"
   [dep options]
   (if (keyword? dep)
-    (if (contains? kindly/known-kinds dep)
-      ;; look up kind dependency
-      (or (get-in options [:kind-deps dep])
-          (get kind-deps dep))
-      ;; look up javascript dependency
-      (or (get-in options [:js-deps dep])
-          (get js-deps dep)
-          (throw (ex-info (str "Unknown dep requested: " dep)
-                          {:id  ::unknown-dep
-                           :dep dep}))))
+    (or
+     ;; look up kind dependency
+     (get-in options [:kind-deps dep])
+     (get kind-deps dep)
+     (get kind-deps (keyword "kind" (name dep)))
+     ;; look up javascript dependency
+     (get-in options [:js-deps dep])
+     (get js-deps dep)
+     (throw (ex-info (str "Unknown dep requested: " dep)
+                     {:id  ::unknown-dep
+                      :dep dep})))
     ;; else a map like {:js [...], :css [...], :scittle [...]} with custom resources
     (if (and (map? dep)
              (or (contains? dep :js)
