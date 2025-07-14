@@ -90,17 +90,17 @@
 ;; Data types that can be recursive
 
 (defmethod render-advice :kind/vector [{:as note :keys [value]}]
-  (walk/render-data-recursively note {:class "kind-vector"} value render))
+  (walk/render-data-recursively note :kind/vector value render))
 
 (defmethod render-advice :kind/map [{:as note :keys [value]}]
   ;; kindly.css puts kind-map in a grid
-  (walk/render-data-recursively note {:class "kind-map"} (apply concat value) render))
+  (walk/render-data-recursively note :kind/map (apply concat value) render))
 
 (defmethod render-advice :kind/set [{:as note :keys [value]}]
-  (walk/render-data-recursively note {:class "kind-set"} value render))
+  (walk/render-data-recursively note :kind/set value render))
 
 (defmethod render-advice :kind/seq [{:as note :keys [value]}]
-  (walk/render-data-recursively note {:class "kind-seq"} value render))
+  (walk/render-data-recursively note :kind/seq value render))
 
 ;; Special data type hiccup that needs careful expansion
 

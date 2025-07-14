@@ -62,19 +62,47 @@
   (-> (derefing-advise note)
       (note-deps)))
 
+(defn data-hiccup [kind notes]
+  (into [:div {:class (str "kind-" (name kind))}]
+        (for [{:keys [hiccup]} notes]
+          [:div {:style {:border  "1px solid grey"
+                         :padding "2px"}}
+           hiccup])))
+
+#_(defn data-hiccup-orig []
+  [:div
+   [:p "{"]
+   (->> prepared-kv-pairs
+        (map (fn [{:keys [kv prepared-kv]}]
+               (if (not-all-plain-values? prepared-kv)
+                 (let [[pk pv] prepared-kv]
+                   [:table
+                    [:tr
+                     [:td {:valign :top}
+                      (item->hiccup pk context)]
+                     [:td [:div
+                           {:style {:margin-left "10px"}}
+                           (item->hiccup pv context)]]]])
+                 ;; else
+                 (item->hiccup (->> kv
+                                    (map pr-str)
+                                    (string/join " ")
+                                    item/printed-clojure)
+                               context))))
+        (into [:div.clay-map
+               {:style {:margin-left "10%"
+                        :width "110%"}}]))
+   [:p "}"]])
+
 (defn render-data-recursively
   "Data kinds like vectors, maps, sets, and seqs are recursively rendered.
   There may be nested kinds to render, and possibly deps discovered."
-  [note props vs render]
+  [note kind vs render]
   (let [notes (for [v vs]
                 (render {:value v}))]
     (-> note
         (update :deps union-into (keep :deps notes))
-        (assoc :hiccup (into [:div props]
-                             (for [{:keys [hiccup]} notes]
-                               [:div {:style {:border  "1px solid grey"
-                                              :padding "2px"}}
-                                hiccup]))))))
+        (assoc :hiccup (data-hiccup kind notes)))))
 
 (defn reagent?
   "Reagent components may be requested by symbol: `[my-component 1]`

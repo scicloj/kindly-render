@@ -17,16 +17,16 @@
 ;; Data types that can be recursive
 
 (defmethod render-advice :kind/vector [{:as note :keys [value]}]
-  (walk/render-data-recursively note {:class "kind-vector"} value render-advice))
+  (walk/render-data-recursively note :kind/vector value render-advice))
 
 (defmethod render-advice :kind/map [{:as note :keys [value]}]
-  (walk/render-data-recursively note {:class "kind-map"} (apply concat value) render-advice))
+  (walk/render-data-recursively note :kind/map (apply concat value) render-advice))
 
 (defmethod render-advice :kind/set [{:as note :keys [value]}]
-  (walk/render-data-recursively note {:class "kind-set"} value render-advice))
+  (walk/render-data-recursively note :kind/set value render-advice))
 
 (defmethod render-advice :kind/seq [{:as note :keys [value]}]
-  (walk/render-data-recursively note {:class "kind-seq"} value render-advice))
+  (walk/render-data-recursively note :kind/seq value render-advice))
 
 ;; Special data type hiccup that needs careful expansion
 

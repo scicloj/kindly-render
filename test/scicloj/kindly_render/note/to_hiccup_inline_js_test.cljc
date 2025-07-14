@@ -400,11 +400,11 @@
           first)))
 
   (let [hiccup
-        (-> 
+        (->
          (to-hiccup-inline-js/render {:value
                                       (kind/table
                                        {:row-maps (take 5 people-as-maps)})})
-         
+
          :hiccup
          )]
     (is (= [:thead [:tr [:th  ":preferred-language"] [:th ":age"]]] (-> hiccup (nth 2))))
@@ -414,20 +414,20 @@
   (let [hiccup
         (->
          (to-hiccup-inline-js/render {:value (kind/table (take 5 people-as-maps))})
-         
-         
+
+
          :hiccup)]
     (is (= [:thead [:tr [:th  ":preferred-language"] [:th ":age"]]] (-> hiccup (nth 2))))
     (is (= 6 (-> hiccup  (nth 3) count))))
-  
+
   (let [hiccup
         (->
          (to-hiccup-inline-js/render {:value
                                       (kind/table (take 5 people-as-vectors))})
-         
+
          :hiccup)]
-    
-    
+
+
     (is (= 6 (-> hiccup  (nth 3) count)))))
 
 
@@ -443,35 +443,35 @@
              (nth 3)
              (nth 6)
              ))))
-;;=> 
-  
+;;=>
+
        ;https://github.com/scicloj/kindly-render/issues/38
-                               
-  
-       ;; 
-                               
+
+
+       ;;
+
        ;; (k/kind-eval '(-> people-as-maps
        ;;                   tc/dataset
        ;;                   (kind/table {:use-datatables true})))
-                               
+
        ;; (k/kind-eval '(-> people-as-dataset
        ;;                   (kind/table {:use-datatables true})))
-                               
+
 
        ;; (k/kind-eval '(-> people-as-dataset
        ;;                   (kind/table {:element/max-height "300px"})))
-                               
+
        ;; (k/kind-eval '(-> people-as-maps
        ;;                   tc/dataset
        ;;                   (kind/table {:use-datatables true})))
-                               
+
        ;; (k/kind-eval '(-> people-as-dataset
        ;;                   (kind/table {:use-datatables true})))
-                               
+
        ;; (k/kind-eval '(-> people-as-dataset
        ;;                   (kind/table {:use-datatables true
        ;;                                :datatables {:scrollY 200}})))
-                               
+
 
 
   (deftest kind-hidden-returns-nothing
@@ -490,7 +490,7 @@
   (deftest kind-map-works
     (is (=
          [:div
-          {:class "kind-map"}
+          :kind/map
           [:div {:style {:border "1px solid grey", :padding "2px"}} ":a"]
           [:div {:style {:border "1px solid grey", :padding "2px"}} "1"]]
          (:hiccup
