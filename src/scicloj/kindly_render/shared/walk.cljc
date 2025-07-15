@@ -22,7 +22,7 @@
   [note]
   (let [note (ka/advise note)
         {:keys [value]} note]
-    (if (instance? IDeref value)
+    (if (delay? value)
       (let [v @value
             meta-kind (kc/meta-kind v)]
         (-> (assoc note :value v)
