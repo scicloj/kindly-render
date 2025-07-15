@@ -71,10 +71,9 @@
   (->> (let [form (if (and (nil? form) code)
                     (edn/read-string code)
                     form)
-             forms (if (or (and (seq? form) (= 'quote (first form)))
-                           (nil? form))
-                     (if (vector? value) value [value])
-                     (if (vector? form) form [form]))]
+             forms (if (fn? value)
+                     (if (vector? form) form [form])
+                     (if (vector? value) value [value]))]
          (scittle forms))
        (assoc note :hiccup)))
 
