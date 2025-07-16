@@ -42,9 +42,17 @@
 (def source-clojure
   (clojure-code-item {:hiccup-element :code.sourceCode.language-clojure.source-clojure.bg-light}))
 
+(def html-escape
+  {\< "&lt;"
+   \> "&gt;"
+   \& "&amp;"
+   \" "&quot;"
+   \' "&apos;"})
+
 (defn block [class x]
   ;; TODO: can the class go on pre instead? for more visibility in the dom
-  [:pre [:code {:class class} x]])
+  [:pre [:code {:class class}
+         (str/escape x html-escape)]])
 
 (defn code-block [x]
   (block "sourceCode language-clojure source-clojure bg-light" x))
