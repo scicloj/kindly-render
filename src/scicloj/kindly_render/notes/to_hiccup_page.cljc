@@ -38,7 +38,10 @@
   "Returns a hiccup representation of a page"
   [{:as notebook :keys [resource-hiccups]}]
   (let [{:keys [head body]} resource-hiccups]
-    (list [:head head]
+    (list [:head
+           [:meta {:charset "UTF-8"}]
+           [:meta {:name "viewport" :content "width=device-width, initial-scale=1"}]
+           head]
           [:body
            [:div.container (hiccups notebook)]
            body])))
