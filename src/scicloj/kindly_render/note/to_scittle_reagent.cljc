@@ -1,6 +1,5 @@
 (ns scicloj.kindly-render.note.to-scittle-reagent
   (:require [scicloj.kindly-render.note.to-hiccup-js :as to-hiccup-js]
-            [scicloj.kindly-render.note.to-hiccup :as to-hiccup]
             [scicloj.kindly-render.shared.walk :as walk]))
 
 (defmulti render-advice :kind)
@@ -8,7 +7,7 @@
 (defn render [note]
   (-> (walk/advise-with-deps note)
       (render-advice)
-      (to-hiccup/kindly-style)))
+      (walk/kindly-style)))
 
 ;; fallback to hiccup-js
 (defmethod render-advice :default [note]
@@ -17,16 +16,16 @@
 ;; Data types that can be recursive
 
 (defmethod render-advice :kind/vector [{:as note :keys [value]}]
-  (walk/render-data-recursively note :kind/vector value render-advice))
+  (walk/render-data-recursively note value render-advice))
 
 (defmethod render-advice :kind/map [{:as note :keys [value]}]
-  (walk/render-data-recursively note :kind/map (apply concat value) render-advice))
+  (walk/render-data-recursively note (apply concat value) render-advice))
 
 (defmethod render-advice :kind/set [{:as note :keys [value]}]
-  (walk/render-data-recursively note :kind/set value render-advice))
+  (walk/render-data-recursively note value render-advice))
 
 (defmethod render-advice :kind/seq [{:as note :keys [value]}]
-  (walk/render-data-recursively note :kind/seq value render-advice))
+  (walk/render-data-recursively note value render-advice))
 
 ;; Special data type hiccup that needs careful expansion
 

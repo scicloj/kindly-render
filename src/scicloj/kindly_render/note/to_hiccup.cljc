@@ -137,24 +137,24 @@
 ;; Data types that can be recursive
 
 (defmethod render-advice :kind/vector [note]
-  (recursives/render-vector note render))
+  (walk/render-data-recursively note render))
 
 (defmethod render-advice :kind/map [note]
-  (recursives/render-map note render))
+  (walk/render-data-recursively note render))
 
 (defmethod render-advice :kind/set [note]
-  (recursives/render-set note render))
+  (walk/render-data-recursively note render))
 
 (defmethod render-advice :kind/seq [note]
-  (recursives/render-seq note render))
+  (walk/render-data-recursively note render))
 
 ;; Special data type hiccup that needs careful expansion
 
 (defmethod render-advice :kind/hiccup [note]
-  (recursives/render-hiccup note render))
+  (walk/render-hiccup-recursively note render))
 
-(defmethod render-advice :kind/table [{:as note :keys [render]}]
-  (recursives/render-table note render))
+(defmethod render-advice :kind/table [note]
+  (walk/render-table-recursively note render))
 
 (defmethod render-advice :kind/video [{:keys [value] :as note}]
   (let [{:keys [src

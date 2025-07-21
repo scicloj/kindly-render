@@ -63,47 +63,55 @@
   (-> (derefing-advise note)
       (note-deps)))
 
-(defn data-hiccup [kind notes]
+(defn data-hiccup-grid [kind notes]
   (into [:div {:class (str "kind-" (name kind))}]
-        (for [{:keys [hiccup]} notes]
-          [:div {:style {:border  "1px solid grey"
-                         :padding "2px"}}
-           hiccup])))
+        (map (fn [{:keys [hiccup]}]
+               [:div {:style {:border  "1px solid grey"
+                              :padding "2px"}}
+                hiccup]))
+        notes))
 
-#_(defn data-hiccup-orig []
-  [:div
-   [:p "{"]
-   (->> prepared-kv-pairs
-        (map (fn [{:keys [kv prepared-kv]}]
-               (if (not-all-plain-values? prepared-kv)
-                 (let [[pk pv] prepared-kv]
-                   [:table
-                    [:tr
-                     [:td {:valign :top}
-                      (item->hiccup pk context)]
-                     [:td [:div
-                           {:style {:margin-left "10px"}}
-                           (item->hiccup pv context)]]]])
-                 ;; else
-                 (item->hiccup (->> kv
-                                    (map pr-str)
-                                    (string/join " ")
-                                    item/printed-clojure)
-                               context))))
-        (into [:div.clay-map
-               {:style {:margin-left "10%"
-                        :width "110%"}}]))
-   [:p "}"]])
+(def surrounds
+  {:kind/map    ["{" "}"]
+   :kind/set    ["#{" "}"]
+   :kind/vector ["[" "]"]
+   :kind/seq    ["(" ")"]})
+
+(defn data-hiccup-orig [kind notes]
+  (let [[start end] (get surrounds kind)]
+    [:div
+     [:p start]
+     (into [(if (= kind :kind/map)
+              :table
+              :div)
+            {:class (if (= kind :kind/map)
+                      "clay-map"
+                      "clay-sequential")
+             :style {:margin-left "10%"
+                     :width       "110%"}}]
+           (if (= kind :kind/map)
+             (comp
+               (partition-all 2)
+               (map (fn [[k v]]
+                      [:tr
+                       [:td {:valign :top} (:hiccup k)]
+                       [:td {:valign :top} (:hiccup v)]])))
+             (map :hiccup))
+           notes)
+     [:p end]]))
 
 (defn render-data-recursively
   "Data kinds like vectors, maps, sets, and seqs are recursively rendered.
   There may be nested kinds to render, and possibly deps discovered."
-  [note kind vs render]
-  (let [notes (for [v vs]
-                (render {:value v}))]
+  [{:as note :keys [kind value kindly/options]} render]
+  (let [notes (if (= kind :kind/map)
+                (sequence (comp cat (map #(render {:value %}))) value)
+                (map #(render {:value %}) value))]
     (-> note
         (update :deps union-into (keep :deps notes))
-        (assoc :hiccup (data-hiccup kind notes)))))
+        (assoc :hiccup (if (:data-as-grid options)
+                         (data-hiccup-grid kind notes)
+                         (data-hiccup-orig kind notes))))))
 
 (defn reagent?
   "Reagent components may be requested by symbol: `[my-component 1]`
@@ -175,41 +183,39 @@
                                (map :hiccup notes)))))))
 
 (defn render-fragment-recursively
-  [{:as note :keys [kind value]} render]
+  [{:as note :keys [value]} render]
   (let [notes (for [child value]
                 (render {:value child}))]
     (-> (update note :deps union-into (keep :deps notes))
         (assoc :hiccup (map :hiccup notes)))))
 
 (defn render-fragment-md-recursively
-  [{:as note :keys [kind value]} render]
+  [{:as note :keys [value]} render]
   (let [notes (for [child value]
                 (render {:value child}))]
     (-> (update note :deps union-into (keep :deps notes))
         (assoc :md (map :md notes)))))
 
 (defn- table-info-from-keys [column-names row-vectors row-maps]
-
   {:column-names (or column-names (keys (first row-maps)))
-   :row-vectors (or row-vectors (map vals row-maps))})
+   :row-vectors  (or row-vectors (map vals row-maps))})
 
 (defn map-of-vectors-to-vector-of-maps [m]
   (let [keys (keys m)
         vals (apply map vector (vals m))]
     (map #(zipmap keys %) vals)))
 
-
 (defn- table-info-from-value [value]
   (cond
     (map? value)
     {:column-names (keys value)
-     :row-vectors (map vals (map-of-vectors-to-vector-of-maps value))}
+     :row-vectors  (map vals (map-of-vectors-to-vector-of-maps value))}
     (map? (first value))
     {:column-names (keys (first value))
-     :row-vectors (map vals value)}
+     :row-vectors  (map vals value)}
     (sequential? (first value))
     {:column-names []
-     :row-vectors value}))
+     :row-vectors  value}))
 
 (defn render-table-recursively
   [{:as note :keys [value kindly/options]} render]

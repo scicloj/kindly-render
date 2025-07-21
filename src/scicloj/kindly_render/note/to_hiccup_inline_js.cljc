@@ -40,51 +40,51 @@
 
 
  (defn require-js
-   "Generates a Hiccup representation of a `<script>` tag that dynamically loads a JavaScript library from  
-   a given URL and ensures that a specific JavaScript object provided by the library is available before  
-   executing a rendering command. This is used to include external JavaScript libraries in a Jupyter notebook environment.  
-  
-   **Parameters:**  
-  
-   - `url` (String): The URL of the JavaScript library to load.  
-   - `js-object` (String): The name of the JavaScript object that the library defines (e.g., `'Plotly'`, `'Highcharts'`).  
-   - `render-cmd` (String): The JavaScript code to execute after the library has been loaded and the object is available.  
-  
-   **Returns:**  
-  
+   "Generates a Hiccup representation of a `<script>` tag that dynamically loads a JavaScript library from
+   a given URL and ensures that a specific JavaScript object provided by the library is available before
+   executing a rendering command. This is used to include external JavaScript libraries in a Jupyter notebook environment.
+
+   **Parameters:**
+
+   - `url` (String): The URL of the JavaScript library to load.
+   - `js-object` (String): The name of the JavaScript object that the library defines (e.g., `'Plotly'`, `'Highcharts'`).
+   - `render-cmd` (String): The JavaScript code to execute after the library has been loaded and the object is available.
+
+   **Returns:**
+
    - A Hiccup vector representing a `<script>` tag containing JavaScript code that loads the library and executes `render-cmd` once the library is loaded."
    [url render-cmd]
    (let [url-md5 (md5 url)
          render-cmd (str/replace render-cmd "XXXXX" url-md5)]
      [:script
       (format
-       "  
-  var clojupyter_loaded_marker_%s;  
-  
+       "
+  var clojupyter_loaded_marker_%s;
+
   var currentScript_%s = document.currentScript;
-  if (typeof clojupyter_loaded_marker_%s === 'undefined') {    
-      clojupyter_loadScript_%s = src => new Promise(resolve => {  
-      clojupyter_script_%s = document.createElement('script');  
-      clojupyter_script_%s.src = src;  
+  if (typeof clojupyter_loaded_marker_%s === 'undefined') {
+      clojupyter_loadScript_%s = src => new Promise(resolve => {
+      clojupyter_script_%s = document.createElement('script');
+      clojupyter_script_%s.src = src;
       clojupyter_script_%s.async = false;
-      clojupyter_script_%s.addEventListener('load', resolve);  
-      document.head.appendChild(clojupyter_script_%s);  
-      });  
-   
-     clojupyter_promise_%s=clojupyter_loadScript_%s('%s');  
-       
-     Promise.all([clojupyter_promise_%s]).then(() => {  
-       console.log('%s loaded');  
+      clojupyter_script_%s.addEventListener('load', resolve);
+      document.head.appendChild(clojupyter_script_%s);
+      });
+
+     clojupyter_promise_%s=clojupyter_loadScript_%s('%s');
+
+     Promise.all([clojupyter_promise_%s]).then(() => {
+       console.log('%s loaded');
        clojupyter_loaded_marker_%s = true;
        %s
-        })  
-       
+        })
+
      } else {
        console.log('%s already loaded');
        %s
-     };  
-     
-  
+     };
+
+
  "
        url-md5
        url-md5
@@ -154,14 +154,14 @@
                    render-cmd)])))
 
  (defn highcharts->hiccup
-   "Converts Highcharts chart data into a Hiccup vector that can render the chart within a Jupyter notebook using the Highcharts library. It sets up a `<div>` container and includes the necessary scripts to render the chart.  
-  
-   **Parameters:**  
-  
-   - `value` (Map): The Highcharts configuration object representing the chart to render.  
-  
-   **Returns:**  
-  
+   "Converts Highcharts chart data into a Hiccup vector that can render the chart within a Jupyter notebook using the Highcharts library. It sets up a `<div>` container and includes the necessary scripts to render the chart.
+
+   **Parameters:**
+
+   - `value` (Map): The Highcharts configuration object representing the chart to render.
+
+   **Returns:**
+
    - A Hiccup vector containing a `<div>` with specified dimensions and a script that initializes the Highcharts chart with the provided configuration."
    [note]
    [:div {:style {:height "500px"
@@ -171,14 +171,14 @@
                             (util/json-str (:value note))))])
 
  (defn plotly->hiccup
-   "Converts Plotly chart data into a Hiccup vector that can render the chart within a Jupyter notebook using the Plotly library.  
-  
-   **Parameters:**  
-  
-   - `value` (Map): The Plotly configuration object representing the chart to render.  
-  
-   **Returns:**  
-  
+   "Converts Plotly chart data into a Hiccup vector that can render the chart within a Jupyter notebook using the Plotly library.
+
+   **Parameters:**
+
+   - `value` (Map): The Plotly configuration object representing the chart to render.
+
+   **Returns:**
+
    - A Hiccup vector containing a `<div>` with specified dimensions and a script that initializes the Plotly chart with the provided configuration."
    [note]
 
@@ -197,42 +197,42 @@
              (util/json-str (:value note))))])
 
  (defn cytoscape>hiccup
-   "Converts Cytoscape graph data into a Hiccup vector that can render the graph within a Jupyter notebook using the Cytoscape.js library.  
-  
-   **Parameters:**  
-  
-   - `value` (Map): The Cytoscape.js configuration object representing the graph to render.  
-  
-   **Returns:**  
-  
+   "Converts Cytoscape graph data into a Hiccup vector that can render the graph within a Jupyter notebook using the Cytoscape.js library.
+
+   **Parameters:**
+
+   - `value` (Map): The Cytoscape.js configuration object representing the graph to render.
+
+   **Returns:**
+
    - A Hiccup vector containing a `<div>` with specified dimensions and a script that initializes the Cytoscape graph with the provided configuration."
    [note]
    [:div {:style {:height "500px"
                   :width "500px"}}
     (render-with-js
      note
-     (format "  
-                            value = %s;  
-                            value['container'] = currentScript_XXXXX.parentElement;  
+     (format "
+                            value = %s;
+                            value['container'] = currentScript_XXXXX.parentElement;
                             cytoscape(value);"
              (util/json-str (:value note))))])
 
  (defn echarts->hiccup
-   "Converts ECharts chart data into a Hiccup vector that can render the chart within a Jupyter notebook using the ECharts library.  
-  
-   **Parameters:**  
-  
-   - `value` (Map): The ECharts configuration object representing the chart to render.  
-  
-   **Returns:**  
-  
+   "Converts ECharts chart data into a Hiccup vector that can render the chart within a Jupyter notebook using the ECharts library.
+
+   **Parameters:**
+
+   - `value` (Map): The ECharts configuration object representing the chart to render.
+
+   **Returns:**
+
    - A Hiccup vector containing a `<div>` with specified dimensions and a script that initializes the ECharts chart with the provided configuration."
    [note]
    [:div {:style {:height "500px"
                   :width "500px"}}
     (render-with-js note
-                    (format "  
-                                    var myChart = echarts.init(currentScript_XXXXX.parentElement);  
+                    (format "
+                                    var myChart = echarts.init(currentScript_XXXXX.parentElement);
                                     myChart.setOption(%s);"
                             (util/json-str (:value note))))])
 
@@ -258,7 +258,7 @@
    (let [id (gensym)]
      [:div
 
-      
+
       (render-with-js
        note
        (format "scittle.core.eval_string('(require (quote [reagent.dom]))(reagent.dom/render %s (js/document.getElementById \"%s\"))')"
@@ -281,16 +281,16 @@
 
 
  (defn render-js
-   "Renders JavaScript-based visualizations by converting the visualization data into Hiccup format and preparing it for display in Clojupyter.  
-  
-   **Parameters:**  
-  
-   - `note` (Map): The note containing the visualization data.  
-   - `value` (Any): The data to render.  
-   - `->hiccup-fn` (Function): A function that takes `value` and returns a Hiccup vector.  
-  
-   **Returns:**  
-  
+   "Renders JavaScript-based visualizations by converting the visualization data into Hiccup format and preparing it for display in Clojupyter.
+
+   **Parameters:**
+
+   - `note` (Map): The note containing the visualization data.
+   - `value` (Any): The data to render.
+   - `->hiccup-fn` (Function): A function that takes `value` and returns a Hiccup vector.
+
+   **Returns:**
+
    - The `note` map augmented with `:clojupyter` containing the rendered HTML, and `:hiccup` containing the Hiccup representation."
    [note ->hiccup-fn]
    (assoc note :hiccup (->hiccup-fn note)))
@@ -299,14 +299,14 @@
  (defmulti render-advice :kind)
 
  (defn render
-   "Used to dispatch rendering to the appropriate `render-advice` method based on the `:kind` of the note.  
-  
-   **Parameters:**  
-  
-   - `note` (Map): The note containing the data and metadata to render.  
-  
-   **Returns:**  
-  
+   "Used to dispatch rendering to the appropriate `render-advice` method based on the `:kind` of the note.
+
+   **Parameters:**
+
+   - `note` (Map): The note containing the data and metadata to render.
+
+   **Returns:**
+
    - The result of applying the appropriate `render-advice` method to the note."
    [note]
 
@@ -320,7 +320,7 @@
 
  (defmethod render-advice :default [note]
    (to-hiccup/render-advice note))
-   
+
  (defmethod render-advice :kind/plotly [note]
    (render-js note  plotly->hiccup))
 
@@ -373,23 +373,23 @@
 
 
  (defmethod render-advice :kind/vector [note]
-   (recursives/render-vector note render))
- 
+   (walk/render-data-recursively note render))
+
  (defmethod render-advice :kind/map [note]
-   (recursives/render-map note render))
- 
+   (walk/render-data-recursively note render))
+
  (defmethod render-advice :kind/set [note]
-   (recursives/render-set note render))
- 
+   (walk/render-data-recursively note render))
+
  (defmethod render-advice :kind/seq [note]
-   (recursives/render-seq note render))
- 
+   (walk/render-data-recursively note render))
+
  (defmethod render-advice :kind/hiccup [note]
-   (recursives/render-hiccup note render))
- 
+   (walk/render-hiccup-recursively note render))
+
  (defmethod render-advice :kind/table [note]
-   (recursives/render-table note render))
- 
+   (walk/render-table-recursively note render))
+
  (defmethod render-advice :kind/video [note]
    (to-hiccup/render note))
 
@@ -403,11 +403,4 @@
   (to-hiccup/render note))
 
 (defmethod render-advice :kind/fragment [note]
-  (recursives/render-seq note render))
-
-
-
-
-
-
-
+  (walk/render-fragment-recursively note render))
